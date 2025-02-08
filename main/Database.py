@@ -70,6 +70,33 @@ class User(db.Model):
         if isinstance(role_enum, RoleEnum):
             self.role = role_enum.name
 
+
+class Insight(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(1024) )
+    longitude = db.Column(
+        db.Float, 
+        db.CheckConstraint('longitude>=-180 AND longitude <= 180', name = 'longitude_range_check'),
+        nullable=False)
+    latitude = db.Column(
+        db.Float,
+        db.CheckConstraint('latitude>=-90 AND latitude <= 90', name = 'latitude_range_check'),
+        nullable = False)
+    image = db.Column(db.String(128))
+    created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
+    modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now() nullable = False)
+    creator = db.Column(db.Integer, db.ForeignKey('user.id'),  nullable = False)
+    category = db.Column(db.String(64))
+    # Restriction - subcategory should be empty when there's no category
+    subcategory = db.Column(
+        db.String(64),
+        db.CheckConstraint('subcategory IS NULL AND category IS NULL OR subcategory IS NOT NULL ', name="subcategory_check"))
+    external_link = db.Column(db.String(512))
+    address = db.Column(db.String(128))
+    user = db.relationship('User', back_populates='insight')
+
+
 class Feedback(db.Model):
     __tablename__ = 'feedback'
     
