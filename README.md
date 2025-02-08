@@ -49,6 +49,10 @@ Install the required dependencies using requirements.txt:
 pip install -r requirements.txt
 ```
 
-### 4. Setup Database
-
 ### 5. Prepopulate Database
+
+To populate the database run file test_database.py
+
+```bash
+python test_database.py
+```
