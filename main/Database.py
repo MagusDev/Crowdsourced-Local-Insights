@@ -85,7 +85,7 @@ class Insight(db.Model):
         nullable = False)
     image = db.Column(db.String(128))
     created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
-    modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now() nullable = False)
+    modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
     creator = db.Column(db.Integer, db.ForeignKey('user.id'),  nullable = False)
     category = db.Column(db.String(64))
     # Restriction - subcategory should be empty when there's no category
@@ -95,6 +95,7 @@ class Insight(db.Model):
     external_link = db.Column(db.String(512))
     address = db.Column(db.String(128))
     user = db.relationship('User', back_populates='insight')
+    feedback = db.relationship("Feedback", back_populates="insight", uselist=False)
 
 
 class Feedback(db.Model):
