@@ -1,14 +1,14 @@
 # Meetings notes
 
 ## Meeting 1.
-* **DATE:**
-* **ASSISTANTS:**
+* **DATE:** 30.1.2025
+* **ASSISTANTS:** Mika Oja
 
 ### Minutes
-*Summary of what was discussed during the meeting*
+*We went through our work and it looked good.*
 
 ### Action points
-*List here the actions points discussed with assistants*
+*We got a recommendation that we should select only three table to implement to database.*
 
 
 
