@@ -12,7 +12,7 @@
 
 ## Usage
 
-This section explains how to get the project up and running on your local machine.
+This section explains how to get the project up and running on your local machine. For database we are using SQLite version 3.43.2
 
 ### 1. Clone the Repository
 
