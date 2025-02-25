@@ -1,17 +1,25 @@
+import enum
+import hashlib
+import os
+from datetime import datetime, timezone
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timezone
 from werkzeug.exceptions import BadRequest
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
-import enum
-import hashlib
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # Go one step back
+DB_PATH = os.path.join(BASE_DIR, "db/test.db")  # Store DB inside the "db" folder
+
+# Ensure the "db" directory exists
+if not os.path.exists(os.path.dirname(DB_PATH)):
+    os.makedirs(os.path.dirname(DB_PATH))
 
 # Initialize Flask and SQLAlchemy
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"  # Replace with your DB URI
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
@@ -30,6 +38,7 @@ class StatusEnum(enum.Enum):
 class RoleEnum(enum.Enum):
     user = "user"
     admin = "admin"
+    
 class User(db.Model):
     __tablename__ = 'user'
 
