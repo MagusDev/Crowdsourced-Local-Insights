@@ -80,10 +80,53 @@ class UserCollection(Resource):
 class UserItem(Resource):
 
     def get(self, user):
-        pass
+        if request.content_type != "application/json":
+            raise UnsupportedMediaType
+        response = {
+            "@type": "user",
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "created_date": user.created_date,
+            "modified_date": user.modified_date,
+            "status": user.status,
+            "role": user.role,
+            "profile_picture": user.profile_picture,
+        }
+        
+        return jsonify(response)
 
     def put(self, user):
-        pass
+        if request.content_type != "application/json":
+            raise UnsupportedMediaType
+        user_data = request.get_json()
+        user.username = user_data.get("username", user.username)
+        user.email = user_data.get("email", user.email)
+        user.first_name = user_data.get("first_name", user.first_name)
+        user.last_name = user_data.get("last_name", user.last_name)
+        user.status = user_data.get("status", user.status)  
+        user.role = user_data.get("role", user.role)
+        user.profile_picture = user_data.get("profile_picture", user.profile_picture)
+        db.session.commit()
+        response = {
+            "@type": "user",
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "created_date": user.created_date,
+            "modified_date": user.modified_date,
+            "status": user.status,
+            "role": user.role,
+            "profile_picture": user.profile_picture,
+        }
+        
+        return jsonify(response)
 
     def delete(self, user):
-        pass
+        db.session.delete(user)
+        db.session.commit()
+        return Response(status=204)
