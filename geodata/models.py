@@ -42,8 +42,6 @@ class RoleEnum(enum.Enum):
     admin = "admin"
     
 class User(db.Model):
-    __tablename__ = 'user'
-
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     username = db.Column(db.String(32), unique=True, nullable=False)
     email = db.Column(db.String(64), unique=True, nullable=False)
@@ -109,9 +107,7 @@ class Insight(db.Model):
     feedback = db.relationship("Feedback", back_populates="insight", uselist=False)
 
 
-class Feedback(db.Model):
-    __tablename__ = 'feedback'
-    
+class Feedback(db.Model):   
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     insight_id = db.Column(db.Integer, db.ForeignKey('insight.id'), nullable=False)
@@ -121,29 +117,22 @@ class Feedback(db.Model):
         nullable=True
     )
     comment = db.Column(db.String(512), nullable=True)
-
-    #used chatGPT to generate DateTime objects for created_date and modified_date
-    # prompt: "The method "utcnow" in class "datetime" is deprecated Use timezone-aware 
-    # objects to represent datetimes in UTC; e.g. by calling .now(datetime.timezone.utc)" 
+ 
     created_date = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        db.DateTime(),
+        default= db.func.now(),
         nullable=False
     )
     
     modified_date = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        db.DateTime(),
+        default=lambda: db.func.now(),
+        onupdate=lambda: db.func.now(),
         nullable=False
     )
     
     user = db.relationship("User", back_populates="feedback")
     insight = db.relationship("Insight", back_populates="feedback")
-
-    def __repr__(self):
-        return (f"<Feedback(id={self.id}, user_id={self.user_id}, insight_id={self.insight_id}, "
-                f"rating={self.rating}, created_date={self.created_date}, modified_date={self.modified_date})>")
 
 # Set up database
 with app.app_context():
