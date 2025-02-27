@@ -1,11 +1,13 @@
 import enum
 import hashlib
 import os
+import uuid
 from datetime import datetime, timezone
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import UUID
 from werkzeug.exceptions import BadRequest
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
@@ -81,7 +83,7 @@ class User(db.Model):
 
 
 class Insight(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024) )
     longitude = db.Column(
