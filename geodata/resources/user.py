@@ -1,7 +1,7 @@
 from flask import Flask, Response, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
-from models import User, db
+from ..models import User, db
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER

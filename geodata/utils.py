@@ -2,7 +2,7 @@ from sqlalchemy import or_
 from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
 
-from models import User, Insight
+from .models import User, Insight
 
 class UserConverter(BaseConverter):
 
