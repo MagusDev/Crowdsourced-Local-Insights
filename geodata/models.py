@@ -87,7 +87,7 @@ class Insight(db.Model):
     image = db.Column(db.String(128))
     created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
     modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
-    creator = db.Column(db.Integer, db.ForeignKey('user.id'),  nullable = False)
+    creator = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
     category = db.Column(db.String(64))
     # Restriction - subcategory should be empty when there's no category
     subcategory = db.Column(
@@ -101,7 +101,7 @@ class Insight(db.Model):
 
 class Feedback(db.Model):   
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
     insight_id = db.Column(db.Integer, db.ForeignKey('insight.id'), nullable=False)
     rating = db.Column(
         db.Integer,

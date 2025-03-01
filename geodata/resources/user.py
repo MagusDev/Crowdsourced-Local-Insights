@@ -1,6 +1,7 @@
 from flask import Flask, Response, request, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource,  url_for
+from sqlalchemy.exc import IntegrityError
 from geodata.models import User, db
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
@@ -46,11 +47,7 @@ class UserCollection(Resource):
             data = request.get_json()
             validate(data, User.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
-            raise BadRequest(description=str(e)) from e
-        
-        required_fields = ["username", "email", "password", "first_name"]
-        if not all(field in data for field in required_fields):
-            raise BadRequest("Missing required fields: username, email, password, first_name.")
+            raise BadRequest(description=str(e)) from e        
 
         if User.query.filter_by(email=data["email"]).first() or User.query.filter_by(username=data["username"]).first():
             raise Conflict("Username or email already exists.")
@@ -75,15 +72,14 @@ class UserCollection(Resource):
                 "self": {"href": f"/api/users/{new_user.username}"}
             }
         })
-        #response.headers["Location"] = url_for("user_item", user=new_user.username)
+        response.headers["Location"] = url_for("api.useritem", user=new_user)
         response.status_code = 201
         return response
 
 class UserItem(Resource):
 
     def get(self, user):
-        if request.content_type != "application/json":
-            raise UnsupportedMediaType
+
         response = {
             "@type": "user",
             "id": user.id,
@@ -103,30 +99,33 @@ class UserItem(Resource):
     def put(self, user):
         if request.content_type != "application/json":
             raise UnsupportedMediaType
-        user_data = request.get_json()
-        user.username = user_data.get("username", user.username)
-        user.email = user_data.get("email", user.email)
-        user.first_name = user_data.get("first_name", user.first_name)
-        user.last_name = user_data.get("last_name", user.last_name)
-        user.status = user_data.get("status", user.status)  
-        user.role = user_data.get("role", user.role)
-        user.profile_picture = user_data.get("profile_picture", user.profile_picture)
-        db.session.commit()
-        response = {
-            "@type": "user",
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "created_date": user.created_date,
-            "modified_date": user.modified_date,
-            "status": user.status,
-            "role": user.role,
-            "profile_picture": user.profile_picture,
-        }
+        try:
+            data = request.get_json()
+            validate(data, User.get_schema(), format_checker=draft7_format_checker)
+        except ValidationError as e:
+            raise BadRequest(description=str(e)) from e
         
-        return jsonify(response)
+
+ 
+        user.username = request.json["username"]
+        user.email = request.json["email"]  
+        user.phone = request.json.get("phone", None)
+        user.password = request.json["password"]
+        user.first_name = request.json["first_name"]
+        user.last_name = request.json["last_name"]
+        user.status = request.json["status"]
+        user.role = request.json["role"]
+        user.profile_picture = request.json.get("profile_picture", None)
+
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return Response(status=409)
+
+        
+        
+        return Response(status=204)
 
     def delete(self, user):
         db.session.delete(user)

@@ -145,10 +145,10 @@ def get_user_json(number =1):
 
 
 class TestUsersCollection(object):
-    RESOURSE_URL = "/api/users/"
+    RESOURCE_URL = "/api/users/"
     def test_get(self, client):
 
-        response = client.get(self.RESOURSE_URL)
+        response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 3
@@ -158,19 +158,69 @@ class TestUsersCollection(object):
     def test_post(self, client):
 
         
-        response = client.post(self.RESOURSE_URL, data= "not json")
+        response = client.post(self.RESOURCE_URL, data= "not json")
         assert response.status_code in [400, 415]
 
-        response = client.post(self.RESOURSE_URL, json=get_user_json())
+
+        valid_user = get_user_json()
+        response = client.post(self.RESOURCE_URL, json=valid_user)
         assert response.status_code == 201
-        #assert response.headers["Location"] == "/api/users/4"
-        #response = client.get("/api/users/4")
-        #assert response.status_code == 201
+        assert response.headers["Location"] == "/api/users/" + valid_user["username"] + "/"
+        response = client.get(response.headers["Location"])
+        assert response.status_code == 200
         
-        response = client.post(self.RESOURSE_URL, json=get_user_json())
+        response = client.post(self.RESOURCE_URL, json=valid_user)
         assert response.status_code == 409
 
-        data = get_user_json(2)
-        data.pop("email")
-        response = client.post(self.RESOURSE_URL, json=data)
+        valid_user.pop("email")
+        response = client.post(self.RESOURCE_URL, json=valid_user)
         assert response.status_code == 400
+
+class TestUserItem(object):
+    RESOURCE_URL = "/api/users/testuser1/"
+    INVALID_URL = "/api/users/invaliduser/"
+
+    def test_get(self, client):
+        response = client.get(self.RESOURCE_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["username"] == "testuser1"
+
+        response = client.get(self.INVALID_URL)
+        assert response.status_code == 404
+    
+    def test_put(self, client):
+        valid_user = get_user_json(3)
+        
+        response = client.put(self.RESOURCE_URL, data= "not json")
+        assert response.status_code in [400, 415]
+
+        response = client.put(self.INVALID_URL, json=valid_user)
+        assert response.status_code == 404
+
+        valid_user["username"] = "testuser2"
+        response = client.put(self.RESOURCE_URL, json=valid_user)
+        assert response.status_code == 409
+
+        valid_user["username"] = "testuser1"
+        response = client.put(self.RESOURCE_URL, json=valid_user)
+        assert response.status_code == 204
+
+        valid_user.pop("email")
+        response = client.put(self.RESOURCE_URL, json=valid_user)
+        assert response.status_code == 400
+
+    def test_delete(self, client):
+        response = client.delete(self.RESOURCE_URL)
+        assert response.status_code == 204
+
+        response = client.delete(self.RESOURCE_URL)
+        assert response.status_code == 404
+
+        response = client.delete(self.INVALID_URL)
+        assert response.status_code == 404
+
+    
+
+
+
