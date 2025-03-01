@@ -1,6 +1,6 @@
 from flask import Flask, Response, request, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource,  url_for
 from geodata.models import User, db
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
@@ -75,7 +75,7 @@ class UserCollection(Resource):
                 "self": {"href": f"/api/users/{new_user.id}"}
             }
         }
-        return Response(jsonify(response), status=201, mimetype="application/json")
+        return Response(jsonify(response),headers= {"Location"  : url_for("api.useritem", user=new_user.id)}, status=201, mimetype="application/json")
 
 class UserItem(Resource):
 
