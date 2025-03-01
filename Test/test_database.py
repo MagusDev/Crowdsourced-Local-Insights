@@ -1,4 +1,4 @@
-from Database import app, db, User, Insight, Feedback, StatusEnum, RoleEnum
+from geodata.models import app, db, User, Insight, Feedback, StatusEnum, RoleEnum
 from datetime import datetime, timezone
 
 def create_test_users():

@@ -11,7 +11,7 @@ api = Api(api_bp)
 
 api.add_resource(UserCollection, "/users/")
 api.add_resource(UserItem, "/users/<user:user>/")
-api.add_resource(InsightCollectionByVariousUsers, "/users/<users:users>/insights/") # error, no converter for users, siggestion: use direct resource for insights instead
+#api.add_resource(InsightCollectionByVariousUsers, "/users/<users:users>/insights/") # error, no converter for users, siggestion: use direct resource for insights instead
 api.add_resource(InsightCollectionByUserItem, "/users/<user:user>/insights/")
 api.add_resource(InsightItemByUserItem, "/users/<user:user>/insights/<insight:insight>/")
 api.add_resource(FeedbackCollectionByInsightItem, "/users/<user:user>/insights/<insight:insight>/feedbacks")

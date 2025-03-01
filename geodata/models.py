@@ -1,35 +1,9 @@
 import enum
 import hashlib
-import os
 import uuid
-from datetime import datetime, timezone
-from flask import Flask, request
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import UUID
-from werkzeug.exceptions import BadRequest
-from sqlalchemy.engine import Engine
-from sqlalchemy import event
-
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # Go one step back
-DB_PATH = os.path.join(BASE_DIR, "db/test.db")  # Store DB inside the "db" folder
-
-# Ensure the "db" directory exists
-if not os.path.exists(os.path.dirname(DB_PATH)):
-    os.makedirs(os.path.dirname(DB_PATH))
-
-# Initialize Flask and SQLAlchemy
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+from geodata import db
 
 # Enum classes for status and role (ChatGPT used for implementing this ENUM functionality)
 class StatusEnum(enum.Enum):
@@ -134,9 +108,3 @@ class Feedback(db.Model):
     user = db.relationship("User", back_populates="feedback")
     insight = db.relationship("Insight", back_populates="feedback")
 
-# Set up database
-with app.app_context():
-    db.create_all()
-
-if __name__ == '__main__':
-    app.run(debug=True)
