@@ -2,11 +2,6 @@ from flask import Flask, Response, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
 
-class InsightCollectionByVariousUsers(Resource):
-
-    def get(self, users):
-        pass
-
 
 class InsightCollectionByUserItem(Resource):
 
@@ -26,4 +21,9 @@ class InsightItemByUserItem(Resource):
         pass
 
     def delete(self, insight):
+        pass
+
+class AllInsights(Resource):
+
+    def get(self):
         pass
