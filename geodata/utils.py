@@ -3,7 +3,7 @@ from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
 from flask import url_for
 
-from .models import User, Insight
+from .models import User, Insight, Feedback
 
 
 # NOTE: This is copied from sensorhub exercise, check if it could be used
@@ -107,3 +107,14 @@ class InsightConverter(BaseConverter):
     # TODO: Check the implementation of this
     def to_url(self, db_insight):
         return db_insight.user + "/insights/" + db_insight.id
+    
+class FeedbackConverter(BaseConverter):
+
+    def to_python(self, feedback_uuid):
+        db_feedback = Feedback.query.filter_by(Feedback.id == feedback_uuid).first()
+        if db_feedback is None:
+            raise NotFound
+        return db_feedback
+    
+    def to_url(self, db_feedback):
+        return db_feedback.user + "/insights/" + db_feedback.insight + "/feedback/" + db_feedback.id

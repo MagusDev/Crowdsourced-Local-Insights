@@ -15,10 +15,11 @@ def create_app(test_config=None):
 
     from . import models
     from . import api
-    from .utils import UserConverter, InsightConverter
+    from .utils import UserConverter, InsightConverter, FeedbackConverter
 
     app.url_map.converters["user"] = UserConverter
     app.url_map.converters["insight"] = InsightConverter
+    app.url_map.converters["feedback"] = FeedbackConverter
     app.register_blueprint(api.api_bp)
 
     return app

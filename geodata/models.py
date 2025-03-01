@@ -55,7 +55,7 @@ class User(db.Model):
 
 
 class Insight(db.Model):
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024) )
     longitude = db.Column(

@@ -4,9 +4,9 @@ from flask_restful import Api
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
-from resources.user import UserCollection, UserItem
-from resources.insight import InsightCollectionByUserItem, InsightItemByUserItem, AllInsights
-from resources.feedback import FeedbackCollectionByInsightItem, FeedbackCollectionByUserItem, FeedbackItemByInsightItem
+from .resources.user import UserCollection, UserItem
+from .resources.insight import InsightCollectionByUserItem, InsightItemByUserItem, AllInsights
+from .resources.feedback import FeedbackCollectionByInsightItem, FeedbackCollectionByUserItem, FeedbackItemByInsightItem
 
 api.add_resource(UserCollection, "/users/")
 api.add_resource(UserItem, "/users/<user:user>/")
