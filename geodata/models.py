@@ -92,18 +92,8 @@ class Feedback(db.Model):
     )
     comment = db.Column(db.String(512), nullable=True)
  
-    created_date = db.Column(
-        db.DateTime(),
-        default= db.func.now(),
-        nullable=False
-    )
-    
-    modified_date = db.Column(
-        db.DateTime(),
-        default=lambda: db.func.now(),
-        onupdate=lambda: db.func.now(),
-        nullable=False
-    )
+    created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
+    modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
     
     user = db.relationship("User", back_populates="feedback")
     insight = db.relationship("Insight", back_populates="feedback")
