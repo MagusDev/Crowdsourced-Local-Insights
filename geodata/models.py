@@ -55,7 +55,7 @@ class User(db.Model):
 
 
 class Insight(db.Model):
-    id = db.Column(db.Integer, primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024) )
     longitude = db.Column(
@@ -82,7 +82,7 @@ class Insight(db.Model):
 
 
 class Feedback(db.Model):   
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     insight_id = db.Column(db.Integer, db.ForeignKey('insight.id'), nullable=False)
     rating = db.Column(

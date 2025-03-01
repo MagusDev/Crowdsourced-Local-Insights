@@ -27,7 +27,10 @@ def client():
         db.drop_all()
 
     os.close(db_fd)
-    os.unlink(db_fname)
+    try:
+        os.unlink(db_fname)
+    except:
+        pass
 
 
 def _populate_db():
@@ -135,7 +138,7 @@ class TestUsersCollection(object):
         RESOURSE_URL = "/api/users/"
         response = client.get(RESOURSE_URL)
         assert response.status_code == 200
-        body = response.json(response.data)
+        body = response.get_json()
         assert len(body["items"]) == 3
         usernames = [item["username"] for item in body["items"]]
         assert set(usernames) == {"testuser1", "testuser2", "admin"}
