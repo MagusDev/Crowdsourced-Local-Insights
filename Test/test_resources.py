@@ -33,11 +33,11 @@ def client():
         pass
 
 
+# generated test data with claude sonnet
 def _populate_db():
     """
     Populate the test database with sample data including users, insights, and feedback.
     """
-    # Create test users
     test_users = [
         User(
             username="testuser1",
@@ -71,7 +71,7 @@ def _populate_db():
     db.session.add_all(test_users)
     db.session.commit()
     
-    # Create test insights
+
     test_insights = [
         Insight(
             title="Coffee Shop Recommendation",
@@ -107,8 +107,7 @@ def _populate_db():
     
     db.session.add_all(test_insights)
     db.session.commit()
-    
-    # Create test feedback
+
     test_feedback = [
         Feedback(
             user_id=test_users[1].id,
@@ -133,12 +132,42 @@ def _populate_db():
     db.session.add_all(test_feedback)
     db.session.commit()
 
+def get_user_json(number =1):
+    return {
+        "username": f"extrauser{number}",
+        "email": f"extrauser{number}@example.com",
+        "password": "password123", 
+        "first_name": "Extra",
+        "last_name": "User",
+        "status": "active",
+        "role": "user",
+    }
+
+
 class TestUsersCollection(object):
+    RESOURSE_URL = "/api/users/"
     def test_get(self, client):
-        RESOURSE_URL = "/api/users/"
-        response = client.get(RESOURSE_URL)
+
+        response = client.get(self.RESOURSE_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 3
         usernames = [item["username"] for item in body["items"]]
         assert set(usernames) == {"testuser1", "testuser2", "admin"}
+
+    def test_post(self, client):
+
+        
+        response = client.post(self.RESOURSE_URL, data= "not json")
+        assert response.status_code in [400, 415]
+
+        response = client.post(self.RESOURSE_URL, json=get_user_json())
+        assert response.status_code == 201
+        
+        response = client.post(self.RESOURSE_URL, json=get_user_json())
+        assert response.status_code == 409
+
+        data = get_user_json(2)
+        data.pop("email")
+        response = client.post(self.RESOURSE_URL, json=data)
+        assert response.status_code == 400
