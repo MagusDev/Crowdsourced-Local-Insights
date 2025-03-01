@@ -44,7 +44,7 @@ class UserCollection(Resource):
 
         try:
             data = request.get_json()
-            validate(data, User.json_schema(), format_checker=draft7_format_checker)
+            validate(data, User.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
             raise BadRequest(description=str(e)) from e
         
@@ -66,16 +66,18 @@ class UserCollection(Resource):
         db.session.add(new_user)
         db.session.commit()
 
-        response = {
+        response = jsonify({
             "@type": "user",
             "id": new_user.id,
             "username": new_user.username,
             "email": new_user.email,
             "@controls": {
-                "self": {"href": f"/api/users/{new_user.id}"}
+                "self": {"href": f"/api/users/{new_user.username}"}
             }
-        }
-        return Response(jsonify(response),headers= {"Location"  : url_for("api.useritem", user=new_user.id)}, status=201, mimetype="application/json")
+        })
+        #response.headers["Location"] = url_for("user_item", user=new_user.username)
+        response.status_code = 201
+        return response
 
 class UserItem(Resource):
 

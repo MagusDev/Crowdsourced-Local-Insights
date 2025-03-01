@@ -53,6 +53,24 @@ class User(db.Model):
         if isinstance(role_enum, RoleEnum):
             self.role = role_enum.name
 
+    @staticmethod
+    def get_schema():
+        schema = {
+            "type" : "object",
+            "required" : ["username", "email", "password", "first_name"]
+        }
+        props = schema["properties"] = {}
+        props["username"] = {"type": "string"}
+        props["email"] = {"type": "string"}   
+        props["phone"] = {"type": "number"}
+        props["password"] = {"type": "string"}
+        props["first_name"] = {"type": "string"}
+        props["last_name"] = {"type": "string"}
+        props["status"] = {"type": "string", "enum": ["active", "inactive", "banned"]}
+        props["role"] = {"type": "string", "enum": ["user", "admin"]}
+        props["profile_picture"] = {"type": "string"}
+        return schema
+
 
 class Insight(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)

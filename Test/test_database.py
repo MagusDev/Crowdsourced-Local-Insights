@@ -1,5 +1,5 @@
-from geodata.models import app, db, User, Insight, Feedback, StatusEnum, RoleEnum
-from datetime import datetime, timezone
+from geodata import create_app, db
+from geodata.models import User, Insight, Feedback
 
 def create_test_users():
     users = [
@@ -61,6 +61,7 @@ def create_test_feedback(user, insight):
     return feedback
 
 def test_database():
+    app = create_app()
     with app.app_context():
         db.drop_all()
         db.create_all()
