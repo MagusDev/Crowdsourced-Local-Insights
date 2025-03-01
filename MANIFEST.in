@@ -1,0 +1,5 @@
+graft geodata/static
+global-exclude *.pyc
+
+include README.md
+include LICENSE
