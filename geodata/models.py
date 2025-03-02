@@ -1,18 +1,30 @@
 import enum
-import hashlib
+import werkzeug.security
 from geodata import db
 
 # Enum classes for status and role (ChatGPT used for implementing this ENUM functionality)
 class StatusEnum(enum.Enum):
-    active = "active"
-    inactive = "inactive"
-    banned = "banned"
+    """
+    Enum class for user status.
+    """
+
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    BANNED = "BANNED"
 
 class RoleEnum(enum.Enum):
-    user = "user"
-    admin = "admin"
+    """
+    Enum class for user role.
+    """
+
+    USER = "USER"
+    ADMIN = "ADMIN"
 
 class User(db.Model):
+    """
+    User model class.
+    """
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     username = db.Column(db.String(32), unique=True, nullable=False)
     email = db.Column(db.String(64), unique=True, nullable=False)
@@ -21,32 +33,62 @@ class User(db.Model):
     first_name = db.Column(db.String(32), nullable=False)
     last_name = db.Column(db.String(32), nullable=True)
     created_date = db.Column(db.DateTime, default=db.func.now(), nullable=False)
-    modified_date = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False)
-    status = db.Column(db.String, nullable=False, default="active")  # Stored as string
-    role = db.Column(db.String, nullable=False, default="user")  # Stored as string
-    profile_picture = db.Column(db.String, nullable=True, default='default_profile_picture_base64_here')
+    modified_date = db.Column(
+        db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False)
+    status = db.Column(db.String, nullable=False, default="ACTIVE")  # Stored as string
+    role = db.Column(
+        db.String, nullable=False, default="USER")  # Stored as string
+    profile_picture = db.Column(
+        db.String, nullable=True, default='default_profile_picture_base64_here')
 
     # Relationship with Insight and Feedback
     insight = db.relationship("Insight", back_populates="user")
     feedback = db.relationship("Feedback", back_populates="user")
 
     def hash_password(self, password):
-        return hashlib.sha256(password.encode()).hexdigest()
+        """
+        Hash the password using werkzeug.security.
+        """
+
+        return werkzeug.security.generate_password_hash(password)
+
+    def verify_password(self, password):
+        """
+        Verify the password using werkzeug.security.
+        """
+
+        return werkzeug.security.check_password_hash(self.password, password)
 
     @property
     def status_enum(self):
+        """
+        Return the status as an Enum.
+        """
+
         return StatusEnum[self.status]
 
     @property
     def role_enum(self):
+        """
+        Return the role as an Enum.
+        """
+
         return RoleEnum[self.role]
 
-    # Set status and role using Enum
+
     def set_status(self, status_enum):
+        """
+        Set the status of the user.
+        """
+
         if isinstance(status_enum, StatusEnum):
             self.status = status_enum.name
 
     def set_role(self, role_enum):
+        """
+        Set the role of the user.
+        """
+
         if isinstance(role_enum, RoleEnum):
             self.role = role_enum.name
 
@@ -63,13 +105,17 @@ class User(db.Model):
         props["password"] = {"type": "string"}
         props["first_name"] = {"type": "string"}
         props["last_name"] = {"type": "string"}
-        props["status"] = {"type": "string", "enum": ["active", "inactive", "banned"]}
-        props["role"] = {"type": "string", "enum": ["user", "admin"]}
+        props["status"] = {"type": "string", "enum": ["ACTIVE", "INACTIVE", "BANNED"]}
+        props["role"] = {"type": "string", "enum": ["USER", "ADMIN"]}
         props["profile_picture"] = {"type": "string"}
         return schema
 
 
 class Insight(db.Model):
+    """
+    Insaight model class.
+    """
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024) )
@@ -83,13 +129,16 @@ class Insight(db.Model):
         nullable = False)
     image = db.Column(db.String(128))
     created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
-    modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
+    modified_date =  db.Column(
+        db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
     creator = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
     category = db.Column(db.String(64))
     # Restriction - subcategory should be empty when there's no category
     subcategory = db.Column(
         db.String(64),
-        db.CheckConstraint('subcategory IS NULL AND category IS NULL OR subcategory IS NOT NULL ', name="subcategory_check"))
+        db.CheckConstraint(
+            'subcategory IS NULL AND category IS NULL OR subcategory IS NOT NULL ',
+              name="subcategory_check"))
     external_link = db.Column(db.String(512))
     address = db.Column(db.String(128))
     user = db.relationship('User', back_populates='insight', uselist=False)
@@ -97,6 +146,10 @@ class Insight(db.Model):
 
 
 class Feedback(db.Model):
+    """
+    Feedback model class.
+    """
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
     insight_id = db.Column(db.Integer, db.ForeignKey('insight.id'), nullable=False)
@@ -108,7 +161,8 @@ class Feedback(db.Model):
     comment = db.Column(db.String(512), nullable=True)
 
     created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
-    modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
+    modified_date =  db.Column(
+        db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
 
     user = db.relationship("User", back_populates="feedback", uselist=False)
     insight = db.relationship("Insight", back_populates="feedback")
