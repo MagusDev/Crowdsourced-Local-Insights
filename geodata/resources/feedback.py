@@ -96,7 +96,26 @@ class FeedbackItemByUserInsightItem(Resource):
 
 
     def put(self,user,insight, feedback):
-        pass
+        if request.content_type != "application/json":
+            raise UnsupportedMediaType
+        
+        try:
+            data = request.get_json()
+            validate(data, Feedback.get_schema(), format_checker=draft7_format_checker)
+        except ValidationError as e:
+            raise BadRequest(description=str(e)) from e
+        
+        feedback.rating = data["rating"]
+        feedback.comment = data["comment"]
+
+        db.session.commit()
+
+        return Response(status=204)
+        
+
+        
 
     def delete(self,user,insight, feedback):
-        pass
+        db.session.delete(feedback)
+        db.session.commit()
+        return Response(status=204)

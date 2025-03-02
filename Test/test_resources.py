@@ -271,15 +271,34 @@ class TestFeedbackItemByUserInsightItem(object):
         assert response.status_code == 404
 
     def test_put(self, client):
-        response = client.put(self.RESOURCE_URL)
-        assert response.status_code == 405
+
+        valid_feedback = {
+            "rating": 4,
+            "comment": "nice insight!"
+        }
+        response = client.put(self.RESOURCE_URL, data= "not json")
+        assert response.status_code in [400, 415]
+
+        response = client.put(self.INVALID_URL, json=valid_feedback)
+        assert response.status_code == 404
+
+        valid_feedback["rating"] = "nice"
+        response = client.put(self.RESOURCE_URL, json=valid_feedback)
+        assert response.status_code == 400
+
+        valid_feedback["rating"] = 4
+        response = client.put(self.RESOURCE_URL, json=valid_feedback)
+        assert response.status_code == 204
+
+
 
     def test_delete(self, client):
+        response = client.delete(self.INVALID_URL)
+        assert response.status_code == 404
+
         response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 204
 
         response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 404
 
-        response = client.delete(self.INVALID_URL)
-        assert response.status_code == 404
