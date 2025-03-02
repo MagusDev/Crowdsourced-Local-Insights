@@ -1,5 +1,5 @@
 import enum
-import hashlib
+import werkzeug.security
 from geodata import db
 
 # Enum classes for status and role (ChatGPT used for implementing this ENUM functionality)
@@ -47,10 +47,17 @@ class User(db.Model):
 
     def hash_password(self, password):
         """
-        Hash the password using SHA256.
+        Hash the password using werkzeug.security.
         """
 
-        return hashlib.sha256(password.encode()).hexdigest()
+        return werkzeug.security.generate_password_hash(password)
+
+    def verify_password(self, password):
+        """
+        Verify the password using werkzeug.security.
+        """
+
+        return werkzeug.security.check_password_hash(self.password, password)
 
     @property
     def status_enum(self):

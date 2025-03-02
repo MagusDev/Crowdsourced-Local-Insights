@@ -2,6 +2,7 @@ import os
 import sys
 import pytest
 import tempfile
+import base64
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from geodata import db, create_app
 from geodata.models import User, Insight, Feedback
@@ -138,6 +139,11 @@ def get_user_json(number =1):
         "role": "USER",
     }
 
+def get_auth_header(username, password):
+    """Generate Basic Auth header"""
+    credentials = f"{username}:{password}"
+    encoded = base64.b64encode(credentials.encode()).decode()
+    return {"Authorization": f"Basic {encoded}"}
 
 class TestUsersCollection(object):
     RESOURCE_URL = "/api/users/"
@@ -186,33 +192,52 @@ class TestUserItem(object):
 
     def test_put(self, client):
         valid_user = get_user_json(3)
+        auth_header = get_auth_header("testuser1", "password123")
 
-        response = client.put(self.RESOURCE_URL, data= "not json")
+        response = client.put(self.RESOURCE_URL, headers = auth_header, data= "not json")
         assert response.status_code in [400, 415]
 
-        response = client.put(self.INVALID_URL, json=valid_user)
+        response = client.put(self.INVALID_URL, headers = auth_header, json=valid_user)
         assert response.status_code == 404
 
         valid_user["username"] = "testuser2"
-        response = client.put(self.RESOURCE_URL, json=valid_user)
+        response = client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
         assert response.status_code == 409
 
         valid_user["username"] = "testuser1"
-        response = client.put(self.RESOURCE_URL, json=valid_user)
+        response = client.put(
+            self.RESOURCE_URL, 
+            json=valid_user,
+            headers= auth_header)
         assert response.status_code == 204
 
+        valid_user["username"] = "testuser1"
+        response = client.put(
+            self.RESOURCE_URL, 
+            json=valid_user,
+            headers= get_auth_header("testuser1", "wrongpassword"))
+        assert response.status_code == 401
+
         valid_user.pop("email")
-        response = client.put(self.RESOURCE_URL, json=valid_user)
+        response = client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
         assert response.status_code == 400
 
     def test_delete(self, client):
         response = client.delete(self.RESOURCE_URL)
-        assert response.status_code == 204
-
-        response = client.delete(self.RESOURCE_URL)
-        assert response.status_code == 404
+        assert response.status_code == 401
 
         response = client.delete(self.INVALID_URL)
+        assert response.status_code == 404
+
+        auth_header = get_auth_header("testuser1", "wrongpassword")
+        response = client.delete(self.RESOURCE_URL , headers = auth_header)
+        assert response.status_code == 401
+
+        auth_header = get_auth_header("testuser1", "password123")
+        response = client.delete(self.RESOURCE_URL , headers = auth_header)
+        assert response.status_code == 204
+
+        response = client.delete(self.RESOURCE_URL , headers = auth_header)
         assert response.status_code == 404
 
 
