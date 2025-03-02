@@ -1,8 +1,5 @@
 import enum
 import hashlib
-import uuid
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import UUID
 from geodata import db
 
 # Enum classes for status and role (ChatGPT used for implementing this ENUM functionality)
