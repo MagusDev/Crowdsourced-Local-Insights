@@ -1,5 +1,6 @@
 from flask import Response, request, jsonify
-from flask_restful import Resource,  url_for
+from flask_restful import  url_for
+from flask_restx import Resource
 from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
