@@ -60,7 +60,7 @@ class UserCollection(Resource):
         new_user = User(
             username=data["username"],
             email=data["email"],
-            password=data["password"],  # Salasanan hash pitäisi lisätä
+            password=User().hash_password(data["password"]),
             first_name=data["first_name"],
             last_name=data.get("last_name", "")
         )
@@ -117,7 +117,7 @@ class UserItem(Resource):
         user.username = request.json["username"]
         user.email = request.json["email"]
         user.phone = request.json.get("phone", None)
-        user.password = request.json["password"]
+        user.password = User().hash_password(request.json["password"])
         user.first_name = request.json["first_name"]
         user.last_name = request.json["last_name"]
         user.status = request.json["status"]
