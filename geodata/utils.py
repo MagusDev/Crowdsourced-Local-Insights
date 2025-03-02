@@ -99,22 +99,23 @@ class UserConverter(BaseConverter):
 class InsightConverter(BaseConverter):
 
     def to_python(self, insight_uuid):
-        db_insight = Insight.query.filter_by(Insight.id == insight_uuid).first()
+        db_insight = Insight.query.filter_by(id = insight_uuid).first()
         if db_insight is None:
             raise NotFound
         return db_insight
     
     # TODO: Check the implementation of this
     def to_url(self, db_insight):
-        return db_insight.user + "/insights/" + db_insight.id
+        
+        return str(db_insight.id)
     
 class FeedbackConverter(BaseConverter):
 
     def to_python(self, feedback_uuid):
-        db_feedback = Feedback.query.filter_by(Feedback.id == feedback_uuid).first()
+        db_feedback = Feedback.query.filter_by(id = feedback_uuid).first()
         if db_feedback is None:
             raise NotFound
         return db_feedback
     
     def to_url(self, db_feedback):
-        return db_feedback.user + "/insights/" + db_feedback.insight + "/feedback/" + db_feedback.id
+        return str(db_feedback.id)

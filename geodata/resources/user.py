@@ -1,10 +1,9 @@
-from flask import Flask, Response, request, jsonify, url_for
-from flask_sqlalchemy import SQLAlchemy
-from flask_restful import Api, Resource,  url_for
+from flask import Response, request, jsonify
+from flask_restful import Resource,  url_for
 from sqlalchemy.exc import IntegrityError
 from geodata.models import User, db
 from jsonschema import validate, ValidationError, Draft7Validator
-from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
+from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
 

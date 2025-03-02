@@ -30,8 +30,8 @@ class User(db.Model):
     profile_picture = db.Column(db.String, nullable=True, default='default_profile_picture_base64_here')
 
     # Relationship with Insight and Feedback
-    insight = db.relationship("Insight", back_populates="user", uselist=False)
-    feedback = db.relationship("Feedback", back_populates="user", uselist=False)
+    insight = db.relationship("Insight", back_populates="user")
+    feedback = db.relationship("Feedback", back_populates="user")
 
     def hash_password(self, password):
         return hashlib.sha256(password.encode()).hexdigest()
@@ -95,8 +95,8 @@ class Insight(db.Model):
         db.CheckConstraint('subcategory IS NULL AND category IS NULL OR subcategory IS NOT NULL ', name="subcategory_check"))
     external_link = db.Column(db.String(512))
     address = db.Column(db.String(128))
-    user = db.relationship('User', back_populates='insight')
-    feedback = db.relationship("Feedback", back_populates="insight", uselist=False)
+    user = db.relationship('User', back_populates='insight', uselist=False)
+    feedback = db.relationship("Feedback", back_populates="insight")
 
 
 class Feedback(db.Model):   
@@ -113,6 +113,16 @@ class Feedback(db.Model):
     created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
     modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
     
-    user = db.relationship("User", back_populates="feedback")
+    user = db.relationship("User", back_populates="feedback", uselist=False)
     insight = db.relationship("Insight", back_populates="feedback")
+
+    @staticmethod
+    def get_schema():
+        schema = {
+            "type" : "object",
+        }
+        props = schema["properties"] = {}
+        props["rating"] = {"type": "number"}
+        props["comment"] = {"type": "string"}
+        return schema
 

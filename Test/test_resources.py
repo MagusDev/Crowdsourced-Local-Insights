@@ -221,6 +221,65 @@ class TestUserItem(object):
         assert response.status_code == 404
 
     
+class TestFeedbackCollectionByUserInsightItem(object):
+    RESOURCE_URL = "/api/users/testuser2/insights/1/feedbacks/"
+    INVALID_URL = "/api/users/testuser2/insights/100/feedbacks/"
+
+    def test_get(self, client):
+        response = client.get(self.RESOURCE_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 1
+
+        response = client.get(self.INVALID_URL)
+        assert response.status_code == 404
+    
+    def test_post(self, client):
+        response = client.post(self.RESOURCE_URL, data= "not json")
+        assert response.status_code in [400, 415]
+
+        response = client.post(self.INVALID_URL, json={"rating": 5, "comment": "Great insight!"})
+        assert response.status_code == 404
+
+        response = client.post(self.RESOURCE_URL, json={"rating": 5, "comment": "Great insight!"})
+        assert response.status_code == 201
+        assert response.headers["Location"] == "/api/users/testuser2/insights/1/feedbacks/4/"
+        response = client.get(response.headers["Location"])
+        assert response.status_code == 200
+
+        response = client.post(self.RESOURCE_URL, json={"rating": "nice", "comment": "Great insight!"})
+        assert response.status_code == 400
+
+class TestFeedbackCollectionByUserItem(object):
+    RESOURCE_URL = "/api/users/testuser2/feedbacks/"
+    def test_get(self, client):
+        response = client.get(self.RESOURCE_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 1
 
 
+class TestFeedbackItemByUserInsightItem(object):
+    RESOURCE_URL = "/api/users/testuser2/insights/1/feedbacks/1/"
+    INVALID_URL = "/api/users/testuser2/insights/1/feedbacks/100/"
 
+    def test_get(self, client):
+        response = client.get(self.RESOURCE_URL)
+        assert response.status_code == 200
+
+        response = client.get(self.INVALID_URL)
+        assert response.status_code == 404
+    
+    def test_put(self, client):
+        response = client.put(self.RESOURCE_URL)
+        assert response.status_code == 405
+
+    def test_delete(self, client):
+        response = client.delete(self.RESOURCE_URL)
+        assert response.status_code == 204
+
+        response = client.delete(self.RESOURCE_URL)
+        assert response.status_code == 404
+
+        response = client.delete(self.INVALID_URL)
+        assert response.status_code == 404
