@@ -109,3 +109,31 @@ class AllInsights(Resource):
             return insight_list, 200
         except Exception as e:
             return   {"error": str(e)}, 500
+
+class InsightItemByUserItem(Resource):
+    def post(self, user):
+        if request.content_type != "application/json":
+            raise UnsupportedMediaType
+
+        payload = request.get_json()
+        new_insight = Insight(
+            creator = user.id,
+            title=payload["title"],
+            description=payload["description"],
+            longitude=payload["longitude"],
+            latitude=payload["latitude"],
+            image=payload["image"],
+            address=payload["address"],
+            category=payload["category"],
+            subcategory=payload["subcategory"],
+            external_link=payload["external_link"],
+            created_date=datetime.now(),
+            modified_date=datetime.now()
+        )
+        try:
+            db.session.add(new_insight)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return 409
+        return new_insight, 201
