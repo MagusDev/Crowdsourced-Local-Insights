@@ -1,5 +1,5 @@
 from flask import Response, request, jsonify
-from flask_restful import  url_for
+from flask import  url_for
 from flask_restx import Resource
 from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
@@ -78,7 +78,7 @@ class UserCollection(Resource):
                 "self": {"href": f"/api/users/{new_user.username}"}
             }
         })
-        response.headers["Location"] = url_for("api.useritem", user=new_user)
+        response.headers["Location"] = url_for("api.user_item", user=new_user)
         response.status_code = 201
         return response
 

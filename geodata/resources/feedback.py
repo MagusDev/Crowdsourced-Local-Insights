@@ -1,5 +1,6 @@
 from flask import Response, request
-from flask_restful import Resource,  url_for
+from flask_restx import Resource
+from flask import url_for
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 from geodata.models import Feedback, db
@@ -58,7 +59,7 @@ class FeedbackCollectionByUserInsightItem(Resource):
 
         response = Response(status=201)
         response.headers["Location"] = url_for(
-            "api.feedbackitembyuserinsightitem", user=user, insight=insight, feedback=new_feedback)
+            "api.feedback_item_by_user_insight_item", user=user, insight=insight, feedback=new_feedback)
 
         return response
 
