@@ -14,7 +14,7 @@ class StatusEnum(enum.Enum):
 class RoleEnum(enum.Enum):
     user = "user"
     admin = "admin"
-    
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     username = db.Column(db.String(32), unique=True, nullable=False)
@@ -61,7 +61,7 @@ class User(db.Model):
         }
         props = schema["properties"] = {}
         props["username"] = {"type": "string"}
-        props["email"] = {"type": "string"}   
+        props["email"] = {"type": "string"}
         props["phone"] = {"type": "number"}
         props["password"] = {"type": "string"}
         props["first_name"] = {"type": "string"}
@@ -77,7 +77,7 @@ class Insight(db.Model):
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024) )
     longitude = db.Column(
-        db.Float, 
+        db.Float,
         db.CheckConstraint('longitude>=-180 AND longitude <= 180', name = 'longitude_range_check'),
         nullable=False)
     latitude = db.Column(
@@ -99,7 +99,7 @@ class Insight(db.Model):
     feedback = db.relationship("Feedback", back_populates="insight")
 
 
-class Feedback(db.Model):   
+class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
     insight_id = db.Column(db.Integer, db.ForeignKey('insight.id'), nullable=False)
@@ -109,10 +109,10 @@ class Feedback(db.Model):
         nullable=True
     )
     comment = db.Column(db.String(512), nullable=True)
- 
+
     created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
     modified_date =  db.Column(db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
-    
+
     user = db.relationship("User", back_populates="feedback", uselist=False)
     insight = db.relationship("Insight", back_populates="feedback")
 
@@ -125,4 +125,3 @@ class Feedback(db.Model):
         props["rating"] = {"type": "number"}
         props["comment"] = {"type": "string"}
         return schema
-

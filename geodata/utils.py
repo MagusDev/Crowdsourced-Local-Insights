@@ -91,10 +91,10 @@ class UserConverter(BaseConverter):
         if db_user is None:
             raise NotFound
         return db_user
-    
+
     def to_url(self, db_user):
         return db_user.username
-    
+
 
 class InsightConverter(BaseConverter):
 
@@ -103,12 +103,10 @@ class InsightConverter(BaseConverter):
         if db_insight is None:
             raise NotFound
         return db_insight
-    
-    # TODO: Check the implementation of this
+
     def to_url(self, db_insight):
-        
         return str(db_insight.id)
-    
+
 class FeedbackConverter(BaseConverter):
 
     def to_python(self, feedback_uuid):
@@ -116,6 +114,6 @@ class FeedbackConverter(BaseConverter):
         if db_feedback is None:
             raise NotFound
         return db_feedback
-    
+
     def to_url(self, db_feedback):
         return str(db_feedback.id)

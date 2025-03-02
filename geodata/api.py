@@ -1,12 +1,13 @@
 from flask import Blueprint
 from flask_restful import Api
+from .resources.user import UserCollection, UserItem
+from .resources.insight import InsightCollectionByUserItem, InsightItemByUserItem, AllInsights
+from .resources.feedback import FeedbackCollectionByUserInsightItem, FeedbackCollectionByUserItem, FeedbackItemByUserInsightItem
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
-from .resources.user import UserCollection, UserItem
-from .resources.insight import InsightCollectionByUserItem, InsightItemByUserItem, AllInsights
-from .resources.feedback import FeedbackCollectionByUserInsightItem, FeedbackCollectionByUserItem, FeedbackItemByUserInsightItem
+
 
 api.add_resource(UserCollection, "/users/")
 api.add_resource(UserItem, "/users/<user:user>/")

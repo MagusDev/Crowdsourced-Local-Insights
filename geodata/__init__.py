@@ -8,12 +8,12 @@ def create_app(test_config=None):
     if test_config is None:
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db/geodata.db"
     else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]  
+        app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
 
-    from . import models
+
     from . import api
     from .utils import UserConverter, InsightConverter, FeedbackConverter
 

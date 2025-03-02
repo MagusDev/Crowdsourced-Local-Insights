@@ -11,7 +11,7 @@ from geodata.models import User, Insight, Feedback
 @pytest.fixture
 def client():
     db_fd, db_fname = tempfile.mkstemp()
-    config = {  
+    config = {
         "SQLALCHEMY_DATABASE_URI": "sqlite:///" + db_fname,
         "TESTING": True,
     }
@@ -67,10 +67,10 @@ def _populate_db():
             role="admin"
         )
     ]
-    
+
     db.session.add_all(test_users)
     db.session.commit()
-    
+
 
     test_insights = [
         Insight(
@@ -104,7 +104,7 @@ def _populate_db():
             address="789 Main Street, Oulu"
         )
     ]
-    
+
     db.session.add_all(test_insights)
     db.session.commit()
 
@@ -128,7 +128,7 @@ def _populate_db():
             comment="Average place, coffee was just ok"
         )
     ]
-    
+
     db.session.add_all(test_feedback)
     db.session.commit()
 
@@ -157,7 +157,7 @@ class TestUsersCollection(object):
 
     def test_post(self, client):
 
-        
+
         response = client.post(self.RESOURCE_URL, data= "not json")
         assert response.status_code in [400, 415]
 
@@ -168,7 +168,7 @@ class TestUsersCollection(object):
         assert response.headers["Location"] == "/api/users/" + valid_user["username"] + "/"
         response = client.get(response.headers["Location"])
         assert response.status_code == 200
-        
+
         response = client.post(self.RESOURCE_URL, json=valid_user)
         assert response.status_code == 409
 
@@ -188,10 +188,10 @@ class TestUserItem(object):
 
         response = client.get(self.INVALID_URL)
         assert response.status_code == 404
-    
+
     def test_put(self, client):
         valid_user = get_user_json(3)
-        
+
         response = client.put(self.RESOURCE_URL, data= "not json")
         assert response.status_code in [400, 415]
 
@@ -233,7 +233,7 @@ class TestFeedbackCollectionByUserInsightItem(object):
 
         response = client.get(self.INVALID_URL)
         assert response.status_code == 404
-    
+
     def test_post(self, client):
         response = client.post(self.RESOURCE_URL, data= "not json")
         assert response.status_code in [400, 415]
@@ -269,7 +269,7 @@ class TestFeedbackItemByUserInsightItem(object):
 
         response = client.get(self.INVALID_URL)
         assert response.status_code == 404
-    
+
     def test_put(self, client):
         response = client.put(self.RESOURCE_URL)
         assert response.status_code == 405

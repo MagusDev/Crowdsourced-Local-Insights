@@ -1,9 +1,10 @@
 from flask import Response, request, jsonify
 from flask_restful import Resource,  url_for
 from sqlalchemy.exc import IntegrityError
-from geodata.models import User, db
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
+from geodata.models import User, db
+
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
 
@@ -46,11 +47,11 @@ class UserCollection(Resource):
             data = request.get_json()
             validate(data, User.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
-            raise BadRequest(description=str(e)) from e        
+            raise BadRequest(description=str(e)) from e
 
         if User.query.filter_by(email=data["email"]).first() or User.query.filter_by(username=data["username"]).first():
             raise Conflict("Username or email already exists.")
-        
+
         # Create new User
         new_user = User(
             username=data["username"],
@@ -92,7 +93,7 @@ class UserItem(Resource):
             "role": user.role,
             "profile_picture": user.profile_picture,
         }
-        
+
         return jsonify(response)
 
     def put(self, user):
@@ -103,11 +104,11 @@ class UserItem(Resource):
             validate(data, User.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
             raise BadRequest(description=str(e)) from e
-        
 
- 
+
+
         user.username = request.json["username"]
-        user.email = request.json["email"]  
+        user.email = request.json["email"]
         user.phone = request.json.get("phone", None)
         user.password = request.json["password"]
         user.first_name = request.json["first_name"]
@@ -122,8 +123,8 @@ class UserItem(Resource):
             db.session.rollback()
             return Response(status=409)
 
-        
-        
+
+
         return Response(status=204)
 
     def delete(self, user):
