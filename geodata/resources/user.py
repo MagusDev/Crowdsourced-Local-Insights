@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
 from geodata.models import User, db
-from geodata.auth import auth, check_user_access
+from geodata.auth import auth
 
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
@@ -106,9 +106,6 @@ class UserItem(Resource):
     def put(self, user):
         """Update user by username"""
 
-        if not check_user_access(user):
-            raise Forbidden("You don't have permission to modify this user")
-
         if request.content_type != "application/json":
             raise UnsupportedMediaType
         try:
@@ -141,8 +138,7 @@ class UserItem(Resource):
     @auth.login_required
     def delete(self, user):
         """Delete user by username"""
-        if not check_user_access(user):
-            raise Forbidden("You don't have permission to delete this user")
+
         db.session.delete(user)
         db.session.commit()
         return Response(status=204)
