@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
@@ -6,11 +8,11 @@ db = SQLAlchemy()
 def create_app(test_config=None):
     app = Flask(__name__)
     if test_config is None:
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db/geodata.db"
+        filepath = os.path.abspath(os.getcwd()) + "/db/geodata.db"
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + filepath
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
     db.init_app(app)
 
 
