@@ -73,6 +73,12 @@ class MasonBuilder(dict):
 
 
 class GeoDataBuilder(MasonBuilder):
+    """
+    A subclass of MasonBuilder that provides some convenience methods for
+    adding elements that are specific to the GeoData application. The methods
+    in this class are specific to the GeoData application and should not be
+    used in other applications.
+    """
 
     def add_control_delete_user(self, user):
         self.add_control(
@@ -85,35 +91,53 @@ class GeoDataBuilder(MasonBuilder):
 
 
 class UserConverter(BaseConverter):
+    """
+    A URL converter for the User model. This converter is used to convert
+    between the User model and the username or email that identifies the user
+    in the URL. The converter is used in the URL rules in the application
+    configuration.
+    """
 
-    def to_python(self, user):
-        db_user = User.query.filter(or_(User.username == user, User.email == user)).first()
+    def to_python(self, value):
+        db_user = User.query.filter(or_(User.username == value, User.email == value)).first()
         if db_user is None:
             raise NotFound
         return db_user
 
-    def to_url(self, db_user):
-        return db_user.username
+    def to_url(self, value):
+        return value.username
 
 
 class InsightConverter(BaseConverter):
+    """
+    A URL converter for the Insight model. This converter is used to convert
+    between the Insight model and the UUID that identifies the insight in the
+    URL. The converter is used in the URL rules in the application
+    configuration
+    """
 
-    def to_python(self, insight_uuid):
-        db_insight = Insight.query.filter_by(id = insight_uuid).first()
+    def to_python(self, value):
+        db_insight = Insight.query.filter_by(id = value).first()
         if db_insight is None:
             raise NotFound
         return db_insight
 
-    def to_url(self, db_insight):
-        return str(db_insight.id)
+    def to_url(self, value):
+        return str(value.id)
 
 class FeedbackConverter(BaseConverter):
+    """
+    A URL converter for the Feedback model. This converter is used to convert
+    between the Feedback model and the UUID that identifies the feedback in the
+    URL. The converter is used in the URL rules in the application
+    configuration
+    """
 
-    def to_python(self, feedback_uuid):
-        db_feedback = Feedback.query.filter_by(id = feedback_uuid).first()
+    def to_python(self, value):
+        db_feedback = Feedback.query.filter_by(id = value).first()
         if db_feedback is None:
             raise NotFound
         return db_feedback
 
-    def to_url(self, db_feedback):
-        return str(db_feedback.id)
+    def to_url(self, value):
+        return str(value.id)

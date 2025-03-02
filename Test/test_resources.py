@@ -45,8 +45,6 @@ def _populate_db():
             password=User().hash_password("password123"),
             first_name="Test",
             last_name="User1",
-            status="active",
-            role="user"
         ),
         User(
             username="testuser2",
@@ -54,8 +52,6 @@ def _populate_db():
             password=User().hash_password("password123"),
             first_name="Test",
             last_name="User2",
-            status="active",
-            role="user"
         ),
         User(
             username="admin",
@@ -63,8 +59,7 @@ def _populate_db():
             password=User().hash_password("adminpass"),
             first_name="Admin",
             last_name="User",
-            status="active",
-            role="admin"
+            role="ADMIN"
         )
     ]
 
@@ -139,8 +134,8 @@ def get_user_json(number =1):
         "password": "password123", 
         "first_name": "Extra",
         "last_name": "User",
-        "status": "active",
-        "role": "user",
+        "status": "ACTIVE",
+        "role": "USER",
     }
 
 
@@ -220,7 +215,7 @@ class TestUserItem(object):
         response = client.delete(self.INVALID_URL)
         assert response.status_code == 404
 
-    
+
 class TestFeedbackCollectionByUserInsightItem(object):
     RESOURCE_URL = "/api/users/testuser2/insights/1/feedbacks/"
     INVALID_URL = "/api/users/testuser2/insights/100/feedbacks/"
@@ -247,7 +242,10 @@ class TestFeedbackCollectionByUserInsightItem(object):
         response = client.get(response.headers["Location"])
         assert response.status_code == 200
 
-        response = client.post(self.RESOURCE_URL, json={"rating": "nice", "comment": "Great insight!"})
+        response = client.post(
+            self.RESOURCE_URL,
+            json={"rating": "nice", "comment": "Great insight!"}
+            )
         assert response.status_code == 400
 
 class TestFeedbackCollectionByUserItem(object):
@@ -301,4 +299,3 @@ class TestFeedbackItemByUserInsightItem(object):
 
         response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 404
-

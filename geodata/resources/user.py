@@ -9,8 +9,10 @@ draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
 
 class UserCollection(Resource):
+    """Resource for handling user collection"""
 
     def get(self):
+        """Get all users"""
         # Help asked from ChatGPT to implement normal json answer to Mason format
         users = User.query.all()
         user_list = [
@@ -40,6 +42,7 @@ class UserCollection(Resource):
         return jsonify(response)
 
     def post(self):
+        """Create new user"""
         if request.content_type != "application/json":
             raise UnsupportedMediaType
 
@@ -49,7 +52,8 @@ class UserCollection(Resource):
         except ValidationError as e:
             raise BadRequest(description=str(e)) from e
 
-        if User.query.filter_by(email=data["email"]).first() or User.query.filter_by(username=data["username"]).first():
+        if User.query.filter_by(
+            email=data["email"]).first() or User.query.filter_by(username=data["username"]).first():
             raise Conflict("Username or email already exists.")
 
         # Create new User
@@ -77,8 +81,10 @@ class UserCollection(Resource):
         return response
 
 class UserItem(Resource):
+    """Resource for handling individual users"""
 
     def get(self, user):
+        """Get user by username"""
 
         response = {
             "@type": "user",
@@ -97,6 +103,7 @@ class UserItem(Resource):
         return jsonify(response)
 
     def put(self, user):
+        """Update user by username"""
         if request.content_type != "application/json":
             raise UnsupportedMediaType
         try:
@@ -128,6 +135,7 @@ class UserItem(Resource):
         return Response(status=204)
 
     def delete(self, user):
+        """Delete user by username"""
         db.session.delete(user)
         db.session.commit()
         return Response(status=204)
