@@ -3,10 +3,13 @@ from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
 from flask import url_for
 
-from .models import User, Insight, Feedback
+from models import User, Insight, Feedback
 
 
-# NOTE: This is copied from sensorhub exercise, check if it could be used
+# NOTE: This class called MasonBuilder is copied from sensorhub example,
+# https://github.com/enkwolf/pwp-course-sensorhub-api-example/blob/master/sensorhub/utils.py
+# Original implementation modified:
+# - to check allowed control properties
 class MasonBuilder(dict):
     """
     A convenience class for managing dictionaries that represent Mason
@@ -15,6 +18,11 @@ class MasonBuilder(dict):
     useful subclass defined next. This class is generic in the sense that it
     does not contain any application specific implementation details.
     """
+
+    ALLOWED_PROPERTIES = {
+        "href", "isHrefTemplate", "title", "description", "method", "encoding",
+        "schema", "schemaUrl", "template", "accept", "output", "files", "alt"
+    }
 
     def add_error(self, title, details):
         """
@@ -68,11 +76,21 @@ class MasonBuilder(dict):
         if "@controls" not in self:
             self["@controls"] = {}
 
-        self["@controls"][ctrl_name] = kwargs
-        self["@controls"][ctrl_name]["href"] = href
+        # Initialize the control dictionary
+        control = {"href": href}
+        
+        # Validate and add additional properties
+        for key, value in kwargs.items():
+            if key in self.ALLOWED_PROPERTIES:
+                control[key] = value
+            else:
+                raise ValueError(f"Invalid control property: {key}")
+        
+        self["@controls"][ctrl_name] = control
 
-
-class GeoDataBuilder(MasonBuilder):
+# https://github.com/enkwolf/pwp-course-sensorhub-api-example/blob/master/sensorhub/utils.py
+# From lnk above, class SensorhubBuilder is used as an example to implement our owm GeodataBuilder
+class GeodataBuilder(MasonBuilder):
     """
     A subclass of MasonBuilder that provides some convenience methods for
     adding elements that are specific to the GeoData application. The methods
@@ -82,13 +100,57 @@ class GeoDataBuilder(MasonBuilder):
 
     def add_control_delete_user(self, user):
         self.add_control(
-            "geodata:delete",
+            "user:delete-user",
             url_for("api.useritem", user=user),
             method="DELETE",
             title="Delete this user"
         )
 
+    def add_control_add_user(self):
+        self.add_control(
+            "user:add-user",
+            url_for("api.usercollection"),
+            method="POST",
+            encoding="json",
+            title="Add a new user",
+            schema=User.get_schema()
+        )
 
+    def add_control_edit_user(self, user):
+        self.add_control(
+            "user:edit",
+            url_for("api.useritem", user=user),
+            method="PUT",
+            encoding="json",
+            title="Edit this user",
+            schema=User.get_schema()
+        )
+
+    def add_control_add_insight(self, user):
+        self.add_control(
+            "user:add-insight",
+            url_for("api.insightcollectionbyuseritem", user=user),
+            method="POST",
+            encoding="json",
+            title="Add a new insight",
+            schema=Insight.get_schema()
+        )
+
+    def add_control_get_insights(self, user):
+        self.add_control(
+            "user:get-insights",
+            url_for("api.insightcollectionbyuseritem", user=user),
+            method="GET",
+            title="Get all user related insights"
+        )
+
+    def add_control_get_feedbacks(self, user):
+        self.add_control(
+            "user:get-feedbacks",
+            url_for("api.feedbackcollectionbyuseritem", user=user),
+            method="GET",
+            title="Get all user related feedbacks"
+        )
 
 class UserConverter(BaseConverter):
     """

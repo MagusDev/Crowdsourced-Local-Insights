@@ -1,0 +1,1 @@
+MASON = "application/vnd.mason+json"

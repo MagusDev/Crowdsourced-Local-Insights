@@ -1,11 +1,14 @@
+import json
 from flask import Response, request, jsonify
 from flask import  url_for
 from flask_restx import Resource
 from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
-from geodata.models import User, db
+from geodata.models import User, db, Insight
 from geodata.auth import auth
+from geodata.utils import GeodataBuilder
+from geodata.constants import *
 
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
@@ -15,33 +18,27 @@ class UserCollection(Resource):
 
     def get(self):
         """Get all users"""
-        # Help asked from ChatGPT to implement normal json answer to Mason format
-        users = User.query.all()
-        user_list = [
-            {
-                "@type": "user",
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "@controls": {
-                    "self": {"href": f"/api/users/{user.id}"},
-                    "edit": {"href": f"/api/users/{user.id}", "method": "PUT"},
-                    "delete": {"href": f"/api/users/{user.id}", "method": "DELETE"},
-                }
-            }
-            for user in users
-        ]
+        
+        body = GeodataBuilder()
 
-        response = {
-            "@type": "users",
-            "items": user_list,
-            "@controls": {
-                "self": {"href": "/api/users/"},
-                "add": {"href": "/api/users/", "method": "POST"}
-            }
-        }
+        body["@type"] = "users"
+        body.add_control("self", url_for("api.usercollection"))
+        body.add_control_add_user()
+        body["items"] = []
+        for user in User.query.all():
+            item = GeodataBuilder(
+                id = user.id,
+                fullname = user.lastname + " " + user.firstname,
+                username = user.username,
+                email = user.email,
+                status = user.status
+            )
+            item["@type"] = "user"
+            item.add_control("self", url_for("api.useritem", user=user))
+            body["items"].append(item)
 
-        return jsonify(response)
+        return Response(json.dumps(body), 200, mimetype=MASON)
+    
 
     def post(self):
         """Create new user"""
@@ -88,21 +85,29 @@ class UserItem(Resource):
     def get(self, user):
         """Get user by username"""
 
-        response = {
-            "@type": "user",
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "created_date": user.created_date,
-            "modified_date": user.modified_date,
-            "status": user.status,
-            "role": user.role,
-            "profile_picture": user.profile_picture,
-        }
+        body = GeodataBuilder(
+            id = user.id,
+            username = user.username,
+            email = user.email,
+            first_name = user.first_name,
+            last_name = user.last_name,
+            created_date = user.created_date,
+            modified_date = user.modified_date,
+            status = user.status,
+            role = user.role,
+            profile_picture = user.profile_picture
+        )
+        body["@type"] = "user"
+        body.add_control("self", url_for("api.useritem", user=user))
+        body.add_control("collection", url_for("api.usercollection"))
+        body.add_control_edit_user(user)
+        body.add_control_add_insight(user)
+        body.add_control_get_insights(user)
+        body.add_control_get_feedbacks(user)
+        
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
-        return jsonify(response)
+
     @auth.login_required
     def put(self, user):
         """Update user by username"""
