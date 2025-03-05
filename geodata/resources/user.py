@@ -66,18 +66,16 @@ class UserCollection(Resource):
         db.session.add(new_user)
         db.session.commit()
 
-        response = jsonify({
-            "@type": "user",
-            "id": new_user.id,
-            "username": new_user.username,
-            "email": new_user.email,
-            "@controls": {
-                "self": {"href": f"/api/users/{new_user.username}"}
-            }
-        })
-        response.headers["Location"] = url_for("api.user_item", user=new_user)
-        response.status_code = 201
-        return response
+        body = GeodataBuilder(
+            id = new_user.id,
+            username = new_user.username,
+            email = new_user.email,
+        )
+        body["@type"] = "user"
+        body.add_control("self", url_for("api.useritem", user=new_user))
+        body.add_control("collection", url_for("api.usercollection"))
+        
+        return Response(json.dumps(body), 201, mimetype=MASON)
 
 class UserItem(Resource):
     """Resource for handling individual users"""
