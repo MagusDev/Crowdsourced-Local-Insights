@@ -119,9 +119,8 @@ class User(db.Model):
 
 class Insight(db.Model):
     """
-    Insaight model class.
+    Insight model class.
     """
-
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024) )
@@ -149,7 +148,26 @@ class Insight(db.Model):
     address = db.Column(db.String(128))
     user = db.relationship('User', back_populates='insight', uselist=False)
     feedback = db.relationship("Feedback", back_populates="insight")
-
+    @staticmethod
+    def get_schema():
+        """
+        Return the schema for insight
+        """
+        schema = {
+            "type" : "object",
+            "required" : ["title", "longitude", "latitude"]
+        }
+        props = schema["properties"] = {}
+        props["title"] = {"type": "string"}
+        props["description"] = {"type": "string"}
+        props["longitude"] = {"type": "number"}
+        props["latitude"] = {"type": "number"}
+        props["image"] = {"type": "string"}
+        props["address"] = {"type": "string"}
+        props["category"] = {"type": "string"}
+        props["subcategory"] = {"type": "string"}
+        props["external_link"] = {"type": "string"}
+        return schema
 
 class Feedback(db.Model):
     """

@@ -5,6 +5,8 @@ import base64
 import tempfile
 import os
 import sys
+from datetime import datetime
+
 import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from geodata import db, create_app
@@ -80,6 +82,8 @@ def _populate_db():
             description="Great coffee shop with free WiFi and quiet atmosphere",
             longitude=25.473,
             latitude=65.012,
+            created_date= datetime.utcnow(),
+            modified_date= datetime.utcnow(),
             creator=test_users[0].id,
             category="Food & Drink",
             subcategory="Cafe",
@@ -90,6 +94,8 @@ def _populate_db():
             description="Peaceful park with walking trails and playground",
             longitude=25.469,
             latitude=65.009,
+            created_date=datetime.utcnow(),
+            modified_date=datetime.utcnow(),
             creator=test_users[1].id,
             category="Outdoor",
             subcategory="Park",
@@ -100,6 +106,8 @@ def _populate_db():
             description="Always available parking spots, even during rush hours",
             longitude=25.465,
             latitude=65.014,
+            created_date= datetime.utcnow(),
+            modified_date=datetime.utcnow(),
             creator=test_users[0].id,
             category="Infrastructure",
             subcategory="Parking",
@@ -141,7 +149,7 @@ def get_user_json(number =1):
     return {
         "username": f"extrauser{number}",
         "email": f"extrauser{number}@example.com",
-        "password": "password123", 
+        "password": "password123",
         "first_name": "Extra",
         "last_name": "User",
         "status": "ACTIVE",
@@ -159,23 +167,23 @@ class TestUsersCollection():
     Test user collection
     """
     RESOURCE_URL = "/api/users/"
-    def test_get(self, test_client):
+    def test_get(self, client):
         """
         Test get users
         """
-        response = test_client.get(self.RESOURCE_URL)
+        response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 3
         usernames = [item["username"] for item in body["items"]]
         assert set(usernames) == {"testuser1", "testuser2", "admin"}
 
-    def test_post(self, test_client):
+    def test_post(self, client):
         """
         Test create user
         """
 
-        response = test_client.post(self.RESOURCE_URL, data= "not json")
+        response = client.post(self.RESOURCE_URL, data= "not json")
         assert response.status_code in [400, 415]
 
 
@@ -200,61 +208,61 @@ class TestUserItem():
     RESOURCE_URL = "/api/users/testuser1/"
     INVALID_URL = "/api/users/invaliduser/"
 
-    def test_get(self, test_client):
+    def test_get(self, client):
         """
         Test get user
         """
-        response = test_client.get(self.RESOURCE_URL)
+        response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert body["username"] == "testuser1"
 
-        response = test_client.get(self.INVALID_URL)
+        response = client.get(self.INVALID_URL)
         assert response.status_code == 404
 
-    def test_put(self, test_client):
+    def test_put(self, client):
         """
         Test update user
         """
         valid_user = get_user_json(3)
         auth_header = get_auth_header("testuser1", "password123")
 
-        response = test_client.put(self.RESOURCE_URL, headers = auth_header, data= "not json")
+        response = client.put(self.RESOURCE_URL, headers = auth_header, data= "not json")
         assert response.status_code in [400, 415]
 
-        response = test_client.put(self.INVALID_URL, headers = auth_header, json=valid_user)
+        response = client.put(self.INVALID_URL, headers = auth_header, json=valid_user)
         assert response.status_code == 404
 
         valid_user["username"] = "testuser2"
-        response = test_client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
+        response = client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
         assert response.status_code == 409
 
         valid_user["username"] = "testuser1"
-        response = test_client.put(
+        response = client.put(
             self.RESOURCE_URL,
             json=valid_user,
             headers= auth_header)
         assert response.status_code == 204
 
         valid_user["username"] = "testuser1"
-        response = test_client.put(
+        response = client.put(
             self.RESOURCE_URL,
             json=valid_user,
             headers= get_auth_header("testuser1", "wrongpassword"))
         assert response.status_code == 401
 
         valid_user.pop("email")
-        response = test_client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
+        response = client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
         assert response.status_code == 400
 
-    def test_delete(self, test_client):
+    def test_delete(self, client):
         """
         Test delete user
         """
-        response = test_client.delete(self.RESOURCE_URL)
+        response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 401
 
-        response = test_client.delete(self.INVALID_URL)
+        response = client.delete(self.INVALID_URL)
         assert response.status_code == 404
 
         auth_header = get_auth_header("testuser1", "wrongpassword")
@@ -268,7 +276,6 @@ class TestUserItem():
         response = client.delete(self.RESOURCE_URL , headers = auth_header)
         assert response.status_code == 404
 
-
 class TestFeedbackCollectionByUserInsightItem():
     """
     Test feedback collection by user insight
@@ -276,35 +283,35 @@ class TestFeedbackCollectionByUserInsightItem():
     RESOURCE_URL = "/api/users/testuser2/insights/1/feedbacks/"
     INVALID_URL = "/api/users/testuser2/insights/100/feedbacks/"
 
-    def test_get(self, test_client):
+    def test_get(self, client):
         """
         Test get feedback collection by user insight
         """
-        response = test_client.get(self.RESOURCE_URL)
+        response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 1
 
-        response = test_client.get(self.INVALID_URL)
+        response = client.get(self.INVALID_URL)
         assert response.status_code == 404
 
-    def test_post(self, test_client):
+    def test_post(self, client):
         """
         Test post feedback
         """
-        response = test_client.post(self.RESOURCE_URL, data= "not json")
+        response = client.post(self.RESOURCE_URL, data= "not json")
         assert response.status_code in [400, 415]
 
-        response = test_client.post(self.INVALID_URL, json={"rating": 5, "comment": "Great insight!"})
+        response = client.post(self.INVALID_URL, json={"rating": 5, "comment": "Great insight!"})
         assert response.status_code == 404
 
-        response = test_client.post(self.RESOURCE_URL, json={"rating": 5, "comment": "Great insight!"})
+        response = client.post(self.RESOURCE_URL, json={"rating": 5, "comment": "Great insight!"})
         assert response.status_code == 201
         assert response.headers["Location"] == "/api/users/testuser2/insights/1/feedbacks/4/"
-        response = test_client.get(response.headers["Location"])
+        response = client.get(response.headers["Location"])
         assert response.status_code == 200
 
-        response = test_client.post(
+        response = client.post(
             self.RESOURCE_URL,
             json={"rating": "nice", "comment": "Great insight!"}
             )
@@ -315,15 +322,14 @@ class TestFeedbackCollectionByUserItem():
     Test feedback collection by user
     """
     RESOURCE_URL = "/api/users/testuser2/feedbacks/"
-    def test_get(self, test_client):
+    def test_get(self, client):
         """
         Test get feedback collection
         """
-        response = test_client.get(self.RESOURCE_URL)
+        response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 1
-
 
 class TestFeedbackItemByUserInsightItem():
     """
@@ -332,17 +338,17 @@ class TestFeedbackItemByUserInsightItem():
     RESOURCE_URL = "/api/users/testuser2/insights/1/feedbacks/1/"
     INVALID_URL = "/api/users/testuser2/insights/1/feedbacks/100/"
 
-    def test_get(self, test_client):
+    def test_get(self, client):
         """
               Test get feedback items by user insight
         """
-        response = test_client.get(self.RESOURCE_URL)
+        response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
 
-        response = test_client.get(self.INVALID_URL)
+        response = client.get(self.INVALID_URL)
         assert response.status_code == 404
 
-    def test_put(self, test_client):
+    def test_put(self, client):
         """
         Test update feedback items by user insight
         """
@@ -350,31 +356,56 @@ class TestFeedbackItemByUserInsightItem():
             "rating": 4,
             "comment": "nice insight!"
         }
-        response = test_client.put(self.RESOURCE_URL, data= "not json")
+        response = client.put(self.RESOURCE_URL, data= "not json")
         assert response.status_code in [400, 415]
 
-        response = test_client.put(self.INVALID_URL, json=valid_feedback)
+        response = client.put(self.INVALID_URL, json=valid_feedback)
         assert response.status_code == 404
 
         valid_feedback["rating"] = "nice"
-        response = test_client.put(self.RESOURCE_URL, json=valid_feedback)
+        response = client.put(self.RESOURCE_URL, json=valid_feedback)
         assert response.status_code == 400
 
         valid_feedback["rating"] = 4
-        response = test_client.put(self.RESOURCE_URL, json=valid_feedback)
+        response = client.put(self.RESOURCE_URL, json=valid_feedback)
         assert response.status_code == 204
 
 
 
-    def test_delete(self, test_client):
+    def test_delete(self, client):
         """
            Test delete feedback items by user insight.
         """
-        response = test_client.delete(self.INVALID_URL)
+        response = client.delete(self.INVALID_URL)
         assert response.status_code == 404
 
-        response = test_client.delete(self.RESOURCE_URL)
+        response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 204
 
         response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 404
+
+# class TestInsightItem():
+# """
+# Test for single insight with all the details
+# """
+#     def test_get(self, client):
+#         """
+#         Test get insight detail with insight id
+#         """
+#
+#     def test_put(self, client):
+#     def test_delete(self, client):
+
+# class TestInsightCollectionByUserItem():
+# """
+# Test for all the insights created by a user, a simple list without much detail
+# """
+# class AllInsights():
+# """
+# Test for insights to be displayed on the map. No need to be detailed
+# """
+# class InsightItemByUserItem():
+# """
+# Test for single insight created by a user
+# """

@@ -10,7 +10,6 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from geodata import db
 from geodata.models import Insight
 
-
 class InsightItem(Resource):
     """
       Resource for single insight with all the details
@@ -105,8 +104,6 @@ class InsightCollectionByUserItem(Resource):
             return user_insights, 200
         except SQLAlchemyError as e:
             return {"error": str(e)}, 500
-
-
 
 class AllInsights(Resource):
     """

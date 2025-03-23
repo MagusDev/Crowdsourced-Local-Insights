@@ -61,7 +61,7 @@ class FeedbackCollectionByUserInsightItem(Resource):
 
         response = Response(status=201)
         response.headers["Location"] = url_for(
-            "api.feedback_item_by_user_insight_item",
+            "api.feedbackitembyuserinsightitem",
                 user=user, insight=insight, feedback=new_feedback)
 
         return response

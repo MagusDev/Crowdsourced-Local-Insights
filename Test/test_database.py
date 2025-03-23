@@ -1,6 +1,8 @@
 """
 This module is used to prepare database for test environment.
 """
+from datetime import datetime
+
 from geodata import create_app, db
 from geodata.models import User, Insight, Feedback
 
@@ -45,6 +47,8 @@ def create_test_insights(user):
             category="Food & Drink",
             subcategory="Cafe",
             address="123 Coffee Street",
+            created_date=datetime.utcnow(),
+            modified_date=datetime.utcnow(),
             creator=user.id
         ),
         Insight(
@@ -55,6 +59,8 @@ def create_test_insights(user):
             category="Recreation",
             subcategory="Parks",
             address="456 Park Avenue",
+            created_date= datetime.utcnow(),
+            modified_date= datetime.utcnow(),
             creator=user.id
         )
     ]

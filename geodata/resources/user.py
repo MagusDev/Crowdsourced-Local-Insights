@@ -31,7 +31,7 @@ class UserCollection(flask_restful.Resource):
         for user in User.query.all():
             item = GeodataBuilder(
                 id = user.id,
-                fullname = user.lastname + " " + user.firstname,
+                fullname = user.last_name + " " + user.first_name,
                 username = user.username,
                 email = user.email,
                 status = user.status
@@ -76,7 +76,9 @@ class UserCollection(flask_restful.Resource):
         body["@type"] = "user"
         body.add_control("self", url_for("api.useritem", user=new_user))
         body.add_control("collection", url_for("api.usercollection"))
-        return Response(json.dumps(body), 201, mimetype=MASON)
+        response = Response(json.dumps(body), 201, mimetype=MASON)
+        response.headers["Location"] = url_for("api.useritem", user=new_user)
+        return response
 
 class UserItem(flask_restful.Resource):
     """Resource for handling individual users"""
@@ -90,8 +92,8 @@ class UserItem(flask_restful.Resource):
             email = user.email,
             first_name = user.first_name,
             last_name = user.last_name,
-            created_date = user.created_date,
-            modified_date = user.modified_date,
+            created_date = user.created_date.isoformat(),
+            modified_date = user.modified_date.isoformat(),
             status = user.status,
             role = user.role,
             profile_picture = user.profile_picture
