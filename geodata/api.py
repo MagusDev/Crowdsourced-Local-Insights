@@ -1,4 +1,6 @@
-
+"""
+This module set api resource route.
+"""
 from .api_init import api
 from .resources.user import UserCollection, UserItem
 from .resources.insight import InsightCollectionByUserItem, AllInsights, InsightItemByUserItem

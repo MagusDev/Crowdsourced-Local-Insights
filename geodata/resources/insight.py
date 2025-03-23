@@ -1,38 +1,48 @@
+"""
+This module defines insight resource.
+"""
 from datetime import datetime
-
 from flask import request
-from flask_restful import Resource, fields
+from flask_restful import Resource
 from werkzeug.exceptions import UnsupportedMediaType
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from geodata import db
-from geodata.api_init import api
 from geodata.models import Insight
 
-# Single insight with all the details
+
 class InsightItem(Resource):
+    """
+      Resource for single insight with all the details
+    """
     def get(self, insight):
-      insight = Insight.query.filter_by(id=insight.id).first()
-      if insight is None:
-        return "No matching insight", 404
-      response = {
-        "id": insight.id,
-        "title": insight.title,
-        "description": insight.description,
-        "longitude": insight.longitude,
-        "latitude": insight.latitude,
-        "image": insight.image,
-        "created_date": insight.created_date.isoformat(),
-        "modified_date": insight.modified_date.isoformat(),
-        "creator": insight.creator,
-        "category": insight.category,
-        "subcategory": insight.subcategory,
-        "external_link": insight.external_link,
-        "address": insight.address
-      }
-      return response, 200
+        """
+          Get a single insight by id
+        """
+        insight = Insight.query.filter_by(id=insight.id).first()
+        if insight is None:
+            return "No matching insight", 404
+        response = {
+            "id": insight.id,
+            "title": insight.title,
+            "description": insight.description,
+            "longitude": insight.longitude,
+            "latitude": insight.latitude,
+            "image": insight.image,
+            "created_date": insight.created_date.isoformat(),
+            "modified_date": insight.modified_date.isoformat(),
+            "creator": insight.creator,
+            "category": insight.category,
+            "subcategory": insight.subcategory,
+            "external_link": insight.external_link,
+            "address": insight.address
+        }
+        return response, 200
 
     def put(self, insight):
+        """
+          Update a single insight
+        """
         if request.content_type != "application/json":
             raise UnsupportedMediaType
 
@@ -55,6 +65,9 @@ class InsightItem(Resource):
         return 204
 
     def delete(self, insight):
+        """
+          delete a single insight
+        """
         insight = Insight.query.filter_by(id=insight.id).first()
         if insight is None:
             return "No matching insight", 404
@@ -67,10 +80,14 @@ class InsightItem(Resource):
 
         return 204
 
-# All the insights created by a user, a simple list without much detail
 class InsightCollectionByUserItem(Resource):
-
+    """
+      Resource for all the insights created by a user, a simple list without much detail
+    """
     def get(self, user):
+        """
+           get all insights created by a user
+         """
         try:
             insights = Insight.query.filter_by(creator=user.id).all()
             user_insights = [
@@ -86,14 +103,19 @@ class InsightCollectionByUserItem(Resource):
                 for insight in (insights if insights else [])
             ]
             return user_insights, 200
-        except Exception as e:
+        except SQLAlchemyError as e:
             return {"error": str(e)}, 500
 
 
-# Insights to be displayed on the map. No need to be detailed
-class AllInsights(Resource):
 
+class AllInsights(Resource):
+    """
+       Resource for insights to be displayed on the map. No need to be detailed
+    """
     def get(self):
+        """
+           get all insights with simple content
+        """
         try:
             insights = Insight.query.all()
             insight_list = [
@@ -108,11 +130,17 @@ class AllInsights(Resource):
                 for insight in (insights if insights else [])
             ]
             return insight_list, 200
-        except Exception as e:
+        except SQLAlchemyError as e:
             return   {"error": str(e)}, 500
 
 class InsightItemByUserItem(Resource):
+    """
+        Resource for single insight created by a user
+    """
     def post(self, user):
+        """
+            create a new insight
+        """
         if request.content_type != "application/json":
             raise UnsupportedMediaType
 

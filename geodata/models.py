@@ -1,3 +1,6 @@
+"""
+This module define app models.
+"""
 import enum
 import werkzeug.security
 from geodata import db
@@ -94,6 +97,9 @@ class User(db.Model):
 
     @staticmethod
     def get_schema():
+        """
+        Return the schema for user
+        """
         schema = {
             "type" : "object",
             "required" : ["username", "email", "password", "first_name"]
@@ -169,6 +175,9 @@ class Feedback(db.Model):
 
     @staticmethod
     def get_schema():
+        """
+        Return the schema for the feedback
+        """
         schema = {
             "type" : "object",
         }

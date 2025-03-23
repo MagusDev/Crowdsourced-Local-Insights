@@ -1,7 +1,13 @@
+"""
+This module is used to prepare database for test environment.
+"""
 from geodata import create_app, db
 from geodata.models import User, Insight, Feedback
 
 def create_test_users():
+    """
+    Create test users
+    """
     users = [
         User(
             username="admin1",
@@ -27,6 +33,9 @@ def create_test_users():
     return users
 
 def create_test_insights(user):
+    """
+    Create test insights
+    """
     insights = [
         Insight(
             title="Great Coffee Shop",
@@ -52,6 +61,9 @@ def create_test_insights(user):
     return insights
 
 def create_test_feedback(user, insight):
+    """
+    Create test feedback
+    """
     feedback = Feedback(
         user_id=user.id,
         insight_id=insight.id,
@@ -61,6 +73,9 @@ def create_test_feedback(user, insight):
     return feedback
 
 def test_database():
+    """
+    Prepare database
+    """
     app = create_app()
     with app.app_context():
         db.drop_all()
@@ -83,7 +98,6 @@ def test_database():
         db.session.add(feedback)
         db.session.commit()
 
-        
         print("\nUsers in database:")
         for user in User.query.all():
             print(f"- {user.username} ({user.role})")
@@ -94,7 +108,8 @@ def test_database():
 
         print("\nFeedback in database:")
         for feedback in Feedback.query.all():
-            print(f"- Rating {feedback.rating} by user {feedback.user_id} for insight {feedback.insight_id}")
+            print(f"- Rating {feedback.rating} by user "
+                  f"{feedback.user_id} for insight {feedback.insight_id}")
 
 if __name__ == "__main__":
     test_database()

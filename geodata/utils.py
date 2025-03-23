@@ -1,3 +1,6 @@
+"""
+This module define shared utilities in app
+"""
 from sqlalchemy import or_
 from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
@@ -78,14 +81,12 @@ class MasonBuilder(dict):
 
         # Initialize the control dictionary
         control = {"href": href}
-        
         # Validate and add additional properties
         for key, value in kwargs.items():
             if key in self.ALLOWED_PROPERTIES:
                 control[key] = value
             else:
                 raise ValueError(f"Invalid control property: {key}")
-        
         self["@controls"][ctrl_name] = control
 
 # https://github.com/enkwolf/pwp-course-sensorhub-api-example/blob/master/sensorhub/utils.py
@@ -99,6 +100,9 @@ class GeodataBuilder(MasonBuilder):
     """
 
     def add_control_delete_user(self, user):
+        """
+        Add a control to delete a user
+        """
         self.add_control(
             "user:delete-user",
             url_for("api.useritem", user=user),
@@ -107,6 +111,9 @@ class GeodataBuilder(MasonBuilder):
         )
 
     def add_control_add_user(self):
+        """
+        Add a control to add a user
+        """
         self.add_control(
             "user:add-user",
             url_for("api.usercollection"),
@@ -117,6 +124,9 @@ class GeodataBuilder(MasonBuilder):
         )
 
     def add_control_edit_user(self, user):
+        """
+        Add a control to edit user
+        """
         self.add_control(
             "user:edit",
             url_for("api.useritem", user=user),
@@ -127,6 +137,9 @@ class GeodataBuilder(MasonBuilder):
         )
 
     def add_control_add_insight(self, user):
+        """
+        Add a control to add insight
+        """
         self.add_control(
             "user:add-insight",
             url_for("api.insightcollectionbyuseritem", user=user),
@@ -137,6 +150,9 @@ class GeodataBuilder(MasonBuilder):
         )
 
     def add_control_get_insights(self, user):
+        """
+        Add a control to get all insights
+        """
         self.add_control(
             "user:get-insights",
             url_for("api.insightcollectionbyuseritem", user=user),
@@ -145,6 +161,9 @@ class GeodataBuilder(MasonBuilder):
         )
 
     def add_control_get_feedbacks(self, user):
+        """
+        Add a control to get all feedback
+        """
         self.add_control(
             "user:get-feedbacks",
             url_for("api.feedbackcollectionbyuseritem", user=user),

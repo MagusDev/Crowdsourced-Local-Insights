@@ -1,5 +1,7 @@
+"""
+This module init app and sets up the db.
+"""
 import os
-
 from flasgger import Swagger
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -8,6 +10,9 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 def create_app(test_config=None):
+    """
+    Create and config app
+    """
     app = Flask(__name__)
     if test_config is None:
         filepath = os.path.abspath(os.getcwd()) + "/db/geodata.db"
@@ -18,7 +23,7 @@ def create_app(test_config=None):
             "openapi": "3.0.4",
             "uiversion": 3,
         }
-        swagger = Swagger(app, template_file= os.path.abspath(os.getcwd()) + "/doc/swaggerdoc.yml")
+        Swagger(app, template_file= os.path.abspath(os.getcwd()) + "/doc/swaggerdoc.yml")
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

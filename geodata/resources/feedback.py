@@ -1,6 +1,8 @@
-from flask import Response, request
+"""
+This module define resource for feedback.
+"""
 from flask_restful import Resource
-from flask import url_for
+from flask import url_for,Response, request
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 from geodata.models import Feedback, db
@@ -59,7 +61,8 @@ class FeedbackCollectionByUserInsightItem(Resource):
 
         response = Response(status=201)
         response.headers["Location"] = url_for(
-            "api.feedback_item_by_user_insight_item", user=user, insight=insight, feedback=new_feedback)
+            "api.feedback_item_by_user_insight_item",
+                user=user, insight=insight, feedback=new_feedback)
 
         return response
 

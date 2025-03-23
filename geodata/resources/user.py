@@ -1,11 +1,15 @@
+"""
+This module define resource for user.
+"""
+
 import json
-from flask import Response, request, jsonify
+from flask import Response, request
 from flask import  url_for
 import flask_restful
 from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
-from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
-from geodata.models import User, db, Insight
+from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
+from geodata.models import User, db
 from geodata.auth import auth
 from geodata.utils import GeodataBuilder
 from geodata.constants import *
@@ -18,7 +22,6 @@ class UserCollection(flask_restful.Resource):
 
     def get(self):
         """Get all users"""
-        
         body = GeodataBuilder()
 
         body["@type"] = "users"
@@ -38,7 +41,6 @@ class UserCollection(flask_restful.Resource):
             body["items"].append(item)
 
         return Response(json.dumps(body), 200, mimetype=MASON)
-    
 
     def post(self):
         """Create new user"""
@@ -74,7 +76,6 @@ class UserCollection(flask_restful.Resource):
         body["@type"] = "user"
         body.add_control("self", url_for("api.useritem", user=new_user))
         body.add_control("collection", url_for("api.usercollection"))
-        
         return Response(json.dumps(body), 201, mimetype=MASON)
 
 class UserItem(flask_restful.Resource):
@@ -102,9 +103,7 @@ class UserItem(flask_restful.Resource):
         body.add_control_add_insight(user)
         body.add_control_get_insights(user)
         body.add_control_get_feedbacks(user)
-        
         return Response(json.dumps(body), 200, mimetype=MASON)
-
 
     @auth.login_required
     def put(self, user):

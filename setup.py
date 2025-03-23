@@ -1,3 +1,6 @@
+"""
+This module set up tools for app.
+"""
 from setuptools import find_packages, setup
 
 setup(
