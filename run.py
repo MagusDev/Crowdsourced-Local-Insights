@@ -1,6 +1,3 @@
-import tempfile
-
-from flask_restx import Api
 
 from geodata import create_app
 
