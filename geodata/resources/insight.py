@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from flask import Flask, Response, request, jsonify
-from flask_restx import Resource
+from flask import request
+from flask_restful import Resource, fields
 from werkzeug.exceptions import UnsupportedMediaType
 from sqlalchemy.exc import IntegrityError
 
 from geodata import db
+from geodata.api_init import api
 from geodata.models import Insight
 
 # Single insight with all the details
@@ -21,8 +22,8 @@ class InsightItem(Resource):
         "longitude": insight.longitude,
         "latitude": insight.latitude,
         "image": insight.image,
-        "created_date": insight.created_date,
-        "modified_date": insight.modified_date,
+        "created_date": insight.created_date.isoformat(),
+        "modified_date": insight.modified_date.isoformat(),
         "creator": insight.creator,
         "category": insight.category,
         "subcategory": insight.subcategory,
@@ -71,7 +72,7 @@ class InsightCollectionByUserItem(Resource):
 
     def get(self, user):
         try:
-            insights = Insight.query.filter_by(creator=user).all()
+            insights = Insight.query.filter_by(creator=user.id).all()
             user_insights = [
                 {
                     "id": insight.id,
@@ -80,7 +81,7 @@ class InsightCollectionByUserItem(Resource):
                     "longitude": insight.longitude,
                     "latitude": insight.latitude,
                     "category": insight.category,
-                    "created_date": insight.created_date
+                    "created_date": insight.created_date.isoformat()
                 }
                 for insight in (insights if insights else [])
             ]
