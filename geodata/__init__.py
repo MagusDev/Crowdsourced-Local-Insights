@@ -1,7 +1,9 @@
 import os
 
+from flasgger import Swagger
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+
 
 db = SQLAlchemy()
 
@@ -10,18 +12,26 @@ def create_app(test_config=None):
     if test_config is None:
         filepath = os.path.abspath(os.getcwd()) + "/db/geodata.db"
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + filepath
+
+        app.config["SWAGGER"] = {
+            "title": "Crowdsourced local insights API",
+            "openapi": "3.0.4",
+            "uiversion": 3,
+        }
+        swagger = Swagger(app, template_file= os.path.abspath(os.getcwd()) + "/doc/swaggerdoc.yml")
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
 
-    from . import api
     from .utils import UserConverter, InsightConverter, FeedbackConverter
+    from geodata.api_init import api_bp
+    from . import api
 
     app.url_map.converters["user"] = UserConverter
     app.url_map.converters["insight"] = InsightConverter
     app.url_map.converters["feedback"] = FeedbackConverter
-    app.register_blueprint(api.api_bp)
+    app.register_blueprint(api_bp)
 
     return app
