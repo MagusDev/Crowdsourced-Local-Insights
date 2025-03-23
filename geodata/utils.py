@@ -3,7 +3,7 @@ from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
 from flask import url_for
 
-from models import User, Insight, Feedback
+from geodata.models import User, Insight, Feedback
 
 
 # NOTE: This class called MasonBuilder is copied from sensorhub example,
