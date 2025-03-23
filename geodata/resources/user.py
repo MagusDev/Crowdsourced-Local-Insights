@@ -1,7 +1,7 @@
 import json
 from flask import Response, request, jsonify
 from flask import  url_for
-from flask_restx import Resource
+import flask_restful
 from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
@@ -13,7 +13,7 @@ from geodata.constants import *
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
 
-class UserCollection(Resource):
+class UserCollection(flask_restful.Resource):
     """Resource for handling user collection"""
 
     def get(self):
@@ -77,7 +77,7 @@ class UserCollection(Resource):
         
         return Response(json.dumps(body), 201, mimetype=MASON)
 
-class UserItem(Resource):
+class UserItem(flask_restful.Resource):
     """Resource for handling individual users"""
 
     def get(self, user):

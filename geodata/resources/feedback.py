@@ -1,5 +1,5 @@
 from flask import Response, request
-from flask_restx import Resource
+from flask_restful import Resource
 from flask import url_for
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
