@@ -14,13 +14,9 @@ setup(
         "flask-restful",
         "flask-sqlalchemy",
         "SQLAlchemy",
-        "enum",
-        "hashlib",
-        "os",
-        "uuid",
         "werkzeug",
-        "datetime",
         "jsonschema",
+        "flasgger",
         "rfc3339-validator",
         "flask-caching"
     ]

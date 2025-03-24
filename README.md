@@ -56,3 +56,51 @@ To populate the database run file test_database.py
 ```bash
 python test_database.py
 ```
+
+### 6. Running the API
+
+#### Method 1
+
+run the app directlyby running the run.py file
+
+```bash
+python run.py
+```
+
+#### Method 2
+
+To run the API run the following command to install the package
+
+```bash
+pip install -e .
+```
+
+Then setup flash environment variables
+
+```bash
+# Windows
+set FLASK_APP=geodata
+set FLASK_ENV=development
+
+# Linux/macOS
+export FLASK_APP=geodata
+export FLASK_ENV=development
+```
+
+Run the application:
+
+```bash
+flask run
+```
+
+the application will be available at http://127.0.0.1:5000/
+
+### 7. Running the tests
+
+The tests are available at Test directory. You can tests for all the resources implemented by
+
+```bash
+pytest --cov=geodata.resources --cov-report=term-missing Test/test_resources.py
+```
+
+This command also shows the test covarage in tests
