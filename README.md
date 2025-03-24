@@ -104,3 +104,9 @@ pytest --cov=geodata.resources --cov-report=term-missing Test/test_resources.py
 ```
 
 This command also shows the test covarage in tests
+
+the errors solved by tests:
+
+1. Converter configrations for long urls
+2. Integrity errors for put commands
+3. Authentication issues for users
