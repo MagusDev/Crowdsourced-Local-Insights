@@ -156,6 +156,7 @@ def get_user_json(number =1):
         "role": "USER",
     }
 
+
 def get_auth_header(username, password):
     """Generate Basic Auth header"""
     credentials = f"{username}:{password}"
@@ -385,27 +386,120 @@ class TestFeedbackItemByUserInsightItem():
         response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 404
 
-# class TestInsightItem():
-# """
-# Test for single insight with all the details
-# """
-#     def test_get(self, client):
-#         """
-#         Test get insight detail with insight id
-#         """
-#
-#     def test_put(self, client):
-#     def test_delete(self, client):
+class TestInsightItem():
+    """
+    Test for single insight with all the details
+    """
+    def test_get(self, client):
+        """
+        Test get insight detail with insight id
+        """
+        response = client.get("/api/insights/1/")
+        assert response.status_code == 200
 
-# class TestInsightCollectionByUserItem():
-# """
-# Test for all the insights created by a user, a simple list without much detail
-# """
-# class AllInsights():
-# """
-# Test for insights to be displayed on the map. No need to be detailed
-# """
-# class InsightItemByUserItem():
-# """
-# Test for single insight created by a user
-# """
+        response = client.get("/api/insights/100/")
+        assert response.status_code == 404
+
+    def test_put(self, client):
+        """
+        Test update insight with insight id
+        """
+        valid_insight = {
+            "title": "New Title",
+            "description": "New Description",
+            "longitude": 25.473,
+            "latitude": 65.012,
+            "image": "newimage.jpg",
+            "address": "123 Test Street, Oulu",
+            "category": "Food & Drink",
+            "subcategory": "Cafe",
+            "external_link": "http://example.com"
+        }
+
+        response = client.put("/api/insights/1/", data= "not json")
+        assert response.status_code in [400, 415]
+
+        response = client.put("/api/insights/100/", json=valid_insight)
+        assert response.status_code == 404
+
+        response = client.put("/api/insights/1/", json=valid_insight)
+        assert response.status_code == 204
+
+        valid_insight.pop("title")
+        response = client.put("/api/insights/1/", json=valid_insight)
+        assert response.status_code == 400
+
+    def test_delete(self, client):
+        """
+        Test delete insight with insight id
+        """
+        response = client.delete("/api/insights/100/")
+        assert response.status_code == 404
+
+        response = client.delete("/api/insights/1/")
+        assert response.status_code == 204
+
+        response = client.delete("/api/insights/1/")
+        assert response.status_code == 404
+
+class TestInsightCollectionByUserItem():
+    """
+    Test for all the insights created by a user, a simple list without much detail
+    """
+    def test_get(self, client):
+        """
+        Test get insights created by a user
+        """
+        response = client.get("/api/users/testuser1/insights/")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 2
+
+class TestAllInsights():
+    """
+    Test for insights to be displayed on the map. No need to be detailed
+    """
+    def test_get(self, client):
+        """
+        Test get all insights
+        """
+        response = client.get("/api/insights/")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 3
+
+class TestInsightItemByUserItem():
+    """
+    Test for single insight created by a user
+    """
+    def test_post(self, client):
+        """
+        Test create insight
+        """
+        valid_insight = {
+            "title": "New Insight",
+            "description": "New Description",
+            "longitude": 25.473,
+            "latitude": 65.012,
+            "image": "newimage.jpg",
+            "address": "123 Test Street, Oulu",
+            "category": "Food & Drink",
+            "subcategory": "Cafe",
+            "external_link": "http://example.com"
+        }
+
+        response = client.post("/api/users/testuser1/insights/", data= "not json")
+        assert response.status_code in [400, 415]
+
+        response = client.post("/api/users/testuser1/insights/", json=valid_insight)
+        assert response.status_code == 201
+        assert response.headers["Location"].endswith("/api/insights/4/")
+        response = client.get(response.headers["Location"])
+        assert response.status_code == 200
+
+        # response = client.post("/api/users/testuser1/insights/", json=valid_insight)
+        # assert response.status_code == 409
+
+        valid_insight.pop("title")
+        response = client.post("/api/users/testuser1/insights/", json=valid_insight)
+        assert response.status_code == 400

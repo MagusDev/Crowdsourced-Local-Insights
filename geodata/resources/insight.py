@@ -1,14 +1,18 @@
 """
 This module defines insight resource.
 """
+import json
 from datetime import datetime
-from flask import request
+from flask import request, Response, url_for
 from flask_restful import Resource
-from werkzeug.exceptions import UnsupportedMediaType
+from werkzeug.exceptions import UnsupportedMediaType, BadRequest
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
+from jsonschema import validate, ValidationError, Draft7Validator
 from geodata import db
+from geodata.constants import MASON
 from geodata.models import Insight
+
+draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
 class InsightItem(Resource):
     """
@@ -18,9 +22,6 @@ class InsightItem(Resource):
         """
           Get a single insight by id
         """
-        insight = Insight.query.filter_by(id=insight.id).first()
-        if insight is None:
-            return "No matching insight", 404
         response = {
             "id": insight.id,
             "title": insight.title,
@@ -44,6 +45,11 @@ class InsightItem(Resource):
         """
         if request.content_type != "application/json":
             raise UnsupportedMediaType
+        try:
+            data = request.get_json()
+            validate(data, Insight.get_schema(), format_checker=draft7_format_checker)
+        except ValidationError as e:
+            raise BadRequest(description=str(e)) from e
 
         payload = request.get_json()
         updated_insight = Insight.query.filter_by(id=insight.id).first()
@@ -56,28 +62,16 @@ class InsightItem(Resource):
         updated_insight.category = payload["category"]
         updated_insight.subcategory = payload["subcategory"]
         updated_insight.external_link = payload["external_link"]
-        try:
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            return 409
-        return 204
+        db.session.commit()
+        return Response(status=204)
 
     def delete(self, insight):
         """
           delete a single insight
         """
-        insight = Insight.query.filter_by(id=insight.id).first()
-        if insight is None:
-            return "No matching insight", 404
-        try:
-            db.session.delete(insight)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            return 409
-
-        return 204
+        db.session.delete(insight)
+        db.session.commit()
+        return Response(status=204)
 
 class InsightCollectionByUserItem(Resource):
     """
@@ -86,60 +80,40 @@ class InsightCollectionByUserItem(Resource):
     def get(self, user):
         """
            get all insights created by a user
-         """
-        try:
-            insights = Insight.query.filter_by(creator=user.id).all()
-            user_insights = [
-                {
-                    "id": insight.id,
-                    "title": insight.title,
-                    "description": insight.description,
-                    "longitude": insight.longitude,
-                    "latitude": insight.latitude,
-                    "category": insight.category,
-                    "created_date": insight.created_date.isoformat()
-                }
-                for insight in (insights if insights else [])
-            ]
-            return user_insights, 200
-        except SQLAlchemyError as e:
-            return {"error": str(e)}, 500
-
-class AllInsights(Resource):
-    """
-       Resource for insights to be displayed on the map. No need to be detailed
-    """
-    def get(self):
         """
-           get all insights with simple content
-        """
-        try:
-            insights = Insight.query.all()
-            insight_list = [
-                {
-                    "id": insight.id,
-                    "title": insight.title,
-                    "description": insight.description,
-                    "longitude": insight.longitude,
-                    "latitude": insight.latitude,
-                    "category": insight.category,
-                }
-                for insight in (insights if insights else [])
-            ]
-            return insight_list, 200
-        except SQLAlchemyError as e:
-            return   {"error": str(e)}, 500
+        insights = Insight.query.filter_by(creator=user.id).all()
+        user_insights = [
+            {
+                "id": insight.id,
+                "title": insight.title,
+                "description": insight.description,
+                "longitude": insight.longitude,
+                "latitude": insight.latitude,
+                "category": insight.category,
+                "created_date": insight.created_date.isoformat()
+            }
+            for insight in (insights if insights else [])
+        ]
 
-class InsightItemByUserItem(Resource):
-    """
-        Resource for single insight created by a user
-    """
+        response = {
+            "@type": "feedbacks",
+            "items": user_insights,
+        }
+
+        return response
+
     def post(self, user):
         """
             create a new insight
         """
         if request.content_type != "application/json":
             raise UnsupportedMediaType
+
+        try:
+            data = request.get_json()
+            validate(data, Insight.get_schema(), format_checker=draft7_format_checker)
+        except ValidationError as e:
+            raise BadRequest(description=str(e)) from e
 
         payload = request.get_json()
         new_insight = Insight(
@@ -156,10 +130,39 @@ class InsightItemByUserItem(Resource):
             created_date=datetime.now(),
             modified_date=datetime.now()
         )
-        try:
-            db.session.add(new_insight)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            return 409
-        return new_insight, 201
+        db.session.add(new_insight)
+        db.session.commit()
+
+        response = Response(status=201)
+        response.headers["Location"] = url_for("api.insightitem", insight=new_insight)
+
+        return response
+
+class AllInsights(Resource):
+    """
+       Resource for insights to be displayed on the map. No need to be detailed
+    """
+    def get(self):
+        """
+           get all insights with simple content
+        """
+        insights = Insight.query.all()
+        insight_list = [
+            {
+                "id": insight.id,
+                "title": insight.title,
+                "description": insight.description,
+                "longitude": insight.longitude,
+                "latitude": insight.latitude,
+                "category": insight.category,
+            }
+            for insight in (insights if insights else [])
+        ]
+        response = {
+            "@type": "insights",
+            "items": insight_list,
+        }
+        return response
+
+
+

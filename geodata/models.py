@@ -176,7 +176,7 @@ class Feedback(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
-    insight_id = db.Column(db.Integer, db.ForeignKey('insight.id'), nullable=False)
+    insight_id = db.Column(db.Integer, db.ForeignKey('insight.id', ondelete="CASCADE"))
     rating = db.Column(
         db.Integer,
         db.CheckConstraint("rating BETWEEN 1 AND 5 OR rating IS NULL", name="check_rating_range"),
