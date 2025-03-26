@@ -20,10 +20,10 @@ def create_app(test_config=None):
 
         app.config["SWAGGER"] = {
             "title": "Crowdsourced local insights API",
-            "openapi": "3.0.4",
+            "openapi": "1.0.0",
             "uiversion": 3,
         }
-        Swagger(app, template_file= os.path.abspath(os.getcwd()) + "/doc/swaggerdoc.yml")
+        Swagger(app, template_file="doc/swaggerdoc.yml")
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
