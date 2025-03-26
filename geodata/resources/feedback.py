@@ -7,6 +7,7 @@ from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 from geodata.models import Feedback, db
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
+from geodata import cache
 
 class FeedbackCollectionByUserInsightItem(Resource):
     """
@@ -93,11 +94,12 @@ class FeedbackCollectionByUserItem(Resource):
 
         return response
 
+
 class FeedbackItemByUserInsightItem(Resource):
     """
     Resource for handling feedback item by user and insight.
     """
-
+    @cache.cached()
     def get(self,user,insight, feedback):
         """
         get a feedback for a user and insight
@@ -138,6 +140,8 @@ class FeedbackItemByUserInsightItem(Resource):
 
         db.session.commit()
 
+        cache.delete(request.path)
+
         return Response(status=204)
 
 
@@ -152,4 +156,7 @@ class FeedbackItemByUserInsightItem(Resource):
 
         db.session.delete(feedback)
         db.session.commit()
+
+        cache.delete(request.path)
+
         return Response(status=204)

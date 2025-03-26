@@ -11,6 +11,7 @@ from jsonschema import validate, ValidationError, Draft7Validator
 from geodata import db
 from geodata.constants import MASON
 from geodata.models import Insight
+from geodata import cache
 
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
@@ -18,6 +19,7 @@ class InsightItem(Resource):
     """
       Resource for single insight with all the details
     """
+    @cache.cached()
     def get(self, insight):
         """
           Get a single insight by id
@@ -63,6 +65,9 @@ class InsightItem(Resource):
         updated_insight.subcategory = payload["subcategory"]
         updated_insight.external_link = payload["external_link"]
         db.session.commit()
+
+        cache.delete(request.path)
+
         return Response(status=204)
 
     def delete(self, insight):
@@ -71,6 +76,9 @@ class InsightItem(Resource):
         """
         db.session.delete(insight)
         db.session.commit()
+
+        cache.delete(request.path)
+
         return Response(status=204)
 
 class InsightCollectionByUserItem(Resource):

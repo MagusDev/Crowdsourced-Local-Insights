@@ -4,10 +4,12 @@ This module init app and sets up the db.
 import os
 from flasgger import Swagger
 from flask import Flask
+from flask_caching import Cache
 from flask_sqlalchemy import SQLAlchemy
 
 
 db = SQLAlchemy()
+cache = Cache()
 
 def create_app(test_config=None):
     """
@@ -27,7 +29,10 @@ def create_app(test_config=None):
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["CACHE_TYPE"] = "FileSystemCache"
+    app.config["CACHE_DIR"] = os.path.join(app.instance_path, "cache")
     db.init_app(app)
+    cache.init_app(app)
 
 
     from .utils import UserConverter, InsightConverter, FeedbackConverter
