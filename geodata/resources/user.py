@@ -10,9 +10,11 @@ from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
 from geodata.models import User, db
-from geodata.auth import auth
+from geodata.auth import require_user_auth
 from geodata.utils import GeodataBuilder
 from geodata.constants import *
+import secrets
+from geodata.models import ApiKey
 
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
@@ -68,12 +70,22 @@ class UserCollection(flask_restful.Resource):
         db.session.add(new_user)
         db.session.commit()
 
+        api_key_str = secrets.token_urlsafe(32)
+        api_key = ApiKey(
+            user_id=new_user.id,
+            key=ApiKey.key_hash(api_key_str),
+            admin=False,
+        )
+        db.session.add(api_key)
+        db.session.commit()
+
         body = GeodataBuilder(
             id = new_user.id,
             username = new_user.username,
             email = new_user.email,
         )
         body["@type"] = "user"
+        body["api_key"] = api_key_str
         body.add_control("self", url_for("api.useritem", user=new_user))
         body.add_control("collection", url_for("api.usercollection"))
         response = Response(json.dumps(body), 201, mimetype=MASON)
@@ -107,7 +119,7 @@ class UserItem(flask_restful.Resource):
         body.add_control_get_feedbacks(user)
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-    @auth.login_required
+    @require_user_auth
     def put(self, user):
         """Update user by username"""
 
@@ -140,7 +152,7 @@ class UserItem(flask_restful.Resource):
 
 
         return Response(status=204)
-    @auth.login_required
+    @require_user_auth
     def delete(self, user):
         """Delete user by username"""
 

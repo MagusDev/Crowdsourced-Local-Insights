@@ -8,7 +8,6 @@ import sys
 from datetime import datetime
 
 import pytest
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from geodata import db, create_app
 from geodata.models import User, Insight, Feedback
 
@@ -157,11 +156,17 @@ def get_user_json(number =1):
     }
 
 
-def get_auth_header(username, password):
-    """Generate Basic Auth header"""
-    credentials = f"{username}:{password}"
-    encoded = base64.b64encode(credentials.encode()).decode()
-    return {"Authorization": f"Basic {encoded}"}
+def get_api_key_header(client):
+    """Create a user and get API key header"""
+    user_data = get_user_json(99)  # Use a unique number
+    response = client.post("/api/users/", json=user_data)
+    assert response.status_code == 201
+    api_key = response.get_json()["api_key"]
+    return {
+        "Geodata-Api-Key": api_key,
+        "user": user_data["username"]
+    }
+
 
 class TestUsersCollection():
     """
@@ -225,56 +230,67 @@ class TestUserItem():
         """
         Test update user
         """
-        valid_user = get_user_json(3)
-        auth_header = get_auth_header("testuser1", "password123")
 
-        response = client.put(self.RESOURCE_URL, headers = auth_header, data= "not json")
+        api_key_info = get_api_key_header(client)
+        username = api_key_info["user"]
+        resource_url = f"/api/users/{username}/"
+        headers = {"Geodata-Api-Key": api_key_info["Geodata-Api-Key"]}
+        valid_user = get_user_json(3)
+        valid_user["username"] = username
+        valid_user["status"] = "ACTIVE"
+        valid_user["role"] = "USER"
+
+        response = client.put(resource_url, headers = headers, data= "not json")
         assert response.status_code in [400, 415]
 
-        response = client.put(self.INVALID_URL, headers = auth_header, json=valid_user)
+        response = client.put(self.INVALID_URL, headers = headers, json=valid_user)
         assert response.status_code == 404
 
-        valid_user["username"] = "testuser2"
-        response = client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
+
+        conflict_user = valid_user.copy()
+        conflict_user["username"] = "testuser2"
+        response = client.put(
+            resource_url,
+            json=conflict_user,
+            headers= headers)
         assert response.status_code == 409
 
-        valid_user["username"] = "testuser1"
-        response = client.put(
-            self.RESOURCE_URL,
-            json=valid_user,
-            headers= auth_header)
+        response = client.put(resource_url, headers=headers, json=valid_user)
         assert response.status_code == 204
 
-        valid_user["username"] = "testuser1"
-        response = client.put(
-            self.RESOURCE_URL,
-            json=valid_user,
-            headers= get_auth_header("testuser1", "wrongpassword"))
-        assert response.status_code == 401
+        invalid_headers = {"Geodata-Api-Key": "invalid_key"}
+        response = client.put(resource_url, headers=invalid_headers, json=valid_user)
+        assert response.status_code == 403
 
-        valid_user.pop("email")
-        response = client.put(self.RESOURCE_URL, headers = auth_header, json=valid_user)
+        invalid_user = valid_user.copy()
+        invalid_user.pop("email")
+        response = client.put(resource_url, headers=headers, json=invalid_user)
         assert response.status_code == 400
 
     def test_delete(self, client):
         """
         Test delete user
         """
-        response = client.delete(self.RESOURCE_URL)
-        assert response.status_code == 401
+        # Create a test user with API key
+        api_key_info = get_api_key_header(client)
+        username = api_key_info["user"]
+        resource_url = f"/api/users/{username}/"
+        headers = {"Geodata-Api-Key": api_key_info["Geodata-Api-Key"]}
 
-        response = client.delete(self.INVALID_URL)
+        response = client.delete(resource_url)
+        assert response.status_code == 403
+
+        response = client.delete(self.INVALID_URL, headers=headers)
         assert response.status_code == 404
 
-        auth_header = get_auth_header("testuser1", "wrongpassword")
-        response = client.delete(self.RESOURCE_URL , headers = auth_header)
-        assert response.status_code == 401
+        invalid_headers = {"Geodata-Api-Key": "invalid_key"}
+        response = client.delete(resource_url, headers=invalid_headers)
+        assert response.status_code == 403
 
-        auth_header = get_auth_header("testuser1", "password123")
-        response = client.delete(self.RESOURCE_URL , headers = auth_header)
+        response = client.delete(resource_url, headers=headers)
         assert response.status_code == 204
 
-        response = client.delete(self.RESOURCE_URL , headers = auth_header)
+        response = client.delete(resource_url, headers=headers)
         assert response.status_code == 404
 
 class TestFeedbackCollectionByUserInsightItem():

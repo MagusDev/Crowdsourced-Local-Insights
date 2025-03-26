@@ -2,6 +2,7 @@
 This module define app models.
 """
 import enum
+import hashlib
 import werkzeug.security
 from geodata import db
 
@@ -47,6 +48,8 @@ class User(db.Model):
     # Relationship with Insight and Feedback
     insight = db.relationship("Insight", back_populates="user")
     feedback = db.relationship("Feedback", back_populates="user")
+
+    api_key = db.relationship("ApiKey", back_populates="user", uselist=False)
 
     def hash_password(self, password):
         """
@@ -203,3 +206,17 @@ class Feedback(db.Model):
         props["rating"] = {"type": "number"}
         props["comment"] = {"type": "string"}
         return schema
+
+
+class ApiKey(db.Model):
+    
+    
+    key = db.Column(db.String(32), nullable=False, unique=True, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    admin =  db.Column(db.Boolean, default=False)
+    
+    user = db.relationship("User", back_populates="api_key", uselist=False)
+    
+    @staticmethod
+    def key_hash(key):
+        return hashlib.sha256(key.encode()).digest()
