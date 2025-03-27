@@ -3,12 +3,8 @@ This module set api resource route.
 """
 from .api_init import api
 from .resources.user import UserCollection, UserItem
-from .resources.insight import InsightCollectionByUserItem, AllInsights, InsightItem
-from .resources.feedback import (
-    FeedbackCollectionByUserInsightItem,
-      FeedbackCollectionByUserItem,
-        FeedbackItemByUserInsightItem
-)
+from .resources.insight import InsightCollection, InsightItem
+from .resources.feedback import FeedbackCollection, FeedbackItem
 
 api.add_resource(InsightCollection, "/insights/", endpoint="insights")
 api.add_resource(InsightCollection, "/users/<user>/insights/", endpoint="insights_by")
