@@ -10,17 +10,13 @@ from .resources.feedback import (
         FeedbackItemByUserInsightItem
 )
 
-api.add_resource(UserCollection, "/users/")
-api.add_resource(UserItem, "/users/<user:user>/")
-
-api.add_resource(FeedbackCollectionByUserItem, "/users/<user:user>/feedbacks/")
-api.add_resource(InsightCollectionByUserItem, "/users/<user:user>/insights/")
-#api.add_resource(InsightItemByUserItem, "/users/<user:user>/insights/<insight:insight>/")
-api.add_resource(AllInsights, "/insights/")
-api.add_resource(
-    FeedbackCollectionByUserInsightItem,
-      "/users/<user:user>/insights/<insight:insight>/feedbacks/")
-api.add_resource(
-    FeedbackItemByUserInsightItem,
-      "/users/<user:user>/insights/<insight:insight>/feedbacks/<feedback:feedback>/")
-api.add_resource(InsightItem, "/insights/<insight:insight>/")
+api.add_resource(InsightCollection, "/insights/", endpoint="insights")
+api.add_resource(InsightCollection, "/users/<user>/insights/", endpoint="insights_by")
+api.add_resource(InsightItem, "/insights/<insight>/", endpoint="insight")
+api.add_resource(InsightItem, "/users/<user>/insights/<insight>/", endpoint="insight_by")
+api.add_resource(FeedbackCollection, "/users/<user>/insights/<insight>/feedbacks/", endpoint="feedbacks_by_insight")
+api.add_resource(FeedbackCollection, "/users/<user>/feedbacks/", endpoint="feedbacks_by_user")
+api.add_resource(FeedbackItem, "/users/<user>/feedbacks/<feedback>/", endpoint="feedback_by_user")
+api.add_resource(FeedbackItem, "/users/<user>/insights/<insight>/feedbacks/<feedback>/", endpoint="feedback_by_insight")
+api.add_resource(UserCollection, "/users/", endpoint="users")
+api.add_resource(UserItem, "/users/<user>/", endpoint="user")
