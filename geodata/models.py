@@ -190,7 +190,35 @@ class Insight(db.Model):
     address = db.Column(db.String(128))
     user = db.relationship('User', back_populates='insight', uselist=False)
     feedback = db.relationship("Feedback", back_populates="insight")
-    
+
+    def serialize(self, short_form=False):
+        # Calculates average of ratings
+        ratings = [fb.rating for fb in self.feedback if fb.rating is not None]
+        average_rating = round(sum(ratings) / len(ratings), 1) if ratings else None
+
+        data = {
+            "id": self.id,
+            "title": self.title,
+            "longitude": self.longitude,
+            "latitude": self.latitude,
+            "category": self.category,
+            "created_date": self.created_date.isoformat(),
+            "user": self.user.username if self.user else None
+        }
+
+        if not short_form:
+            data.update({
+                "description": self.description,
+                "subcategory": self.subcategory,
+                "image": self.image,
+                "modified_date": self.modified_date.isoformat() if self.modified_date else None,
+                "external_link": self.external_link,
+                "address": self.address,
+                "average_rating": average_rating,
+            })
+
+        return data
+
     @staticmethod
     def get_schema():
         """
