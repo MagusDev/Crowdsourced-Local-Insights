@@ -1,10 +1,12 @@
 """
 This module define shared utilities in app
 """
+import json
 from sqlalchemy import or_
 from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
-from flask import url_for
+from flask import request, Response, url_for
+from constants import MASON, ERROR_PROFILE
 
 from geodata.models import User, Insight, Feedback
 
@@ -89,6 +91,65 @@ class MasonBuilder(dict):
                 raise ValueError(f"Invalid control property: {key}")
         self["@controls"][ctrl_name] = control
 
+    def add_control_post(self, ctrl_name, title, href, schema):
+        """
+        Utility method for adding POST type controls. The control is
+        constructed from the method's parameters. Method and encoding are
+        fixed to "POST" and "json" respectively.
+        
+        : param str ctrl_name: name of the control (including namespace if any)
+        : param str href: target URI for the control
+        : param str title: human-readable title for the control
+        : param dict schema: a dictionary representing a valid JSON schema
+        """
+    
+        self.add_control(
+            ctrl_name,
+            href,
+            method="POST",
+            encoding="json",
+            title=title,
+            schema=schema
+        )
+
+    def add_control_put(self, title, href, schema):
+        """
+        Utility method for adding PUT type controls. The control is
+        constructed from the method's parameters. Control name, method and
+        encoding are fixed to "edit", "PUT" and "json" respectively.
+        
+        : param str href: target URI for the control
+        : param str title: human-readable title for the control
+        : param dict schema: a dictionary representing a valid JSON schema
+        """
+
+        self.add_control(
+            "edit",
+            href,
+            method="PUT",
+            encoding="json",
+            title=title,
+            schema=schema
+        )
+        
+    def add_control_delete(self, title, href):
+        """
+        Utility method for adding PUT type controls. The control is
+        constructed from the method's parameters. Control method is fixed to
+        "DELETE", and control's name is read from the class attribute
+        *DELETE_RELATION* which needs to be overridden by the child class.
+
+        : param str href: target URI for the control
+        : param str title: human-readable title for the control
+        """
+        
+        self.add_control(
+            "delete",
+            href,
+            method="DELETE",
+            title=title,
+        )
+
 # https://github.com/enkwolf/pwp-course-sensorhub-api-example/blob/master/sensorhub/utils.py
 # From lnk above, class SensorhubBuilder is used as an example to implement our owm GeodataBuilder
 class GeodataBuilder(MasonBuilder):
@@ -99,57 +160,7 @@ class GeodataBuilder(MasonBuilder):
     used in other applications.
     """
 
-    def add_control_delete_user(self, user):
-        """
-        Add a control to delete a user
-        """
-        self.add_control(
-            "user:delete-user",
-            url_for("api.useritem", user=user),
-            method="DELETE",
-            title="Delete this user"
-        )
-
-    def add_control_add_user(self):
-        """
-        Add a control to add a user
-        """
-        self.add_control(
-            "user:add-user",
-            url_for("api.usercollection"),
-            method="POST",
-            encoding="json",
-            title="Add a new user",
-            schema=User.get_schema()
-        )
-
-    def add_control_edit_user(self, user):
-        """
-        Add a control to edit user
-        """
-        self.add_control(
-            "user:edit",
-            url_for("api.useritem", user=user),
-            method="PUT",
-            encoding="json",
-            title="Edit this user",
-            schema=User.get_schema()
-        )
-
-    def add_control_add_insight(self, user):
-        """
-        Add a control to add insight
-        """
-        self.add_control(
-            "user:add-insight",
-            url_for("api.insightcollectionbyuseritem", user=user),
-            method="POST",
-            encoding="json",
-            title="Add a new insight",
-            schema=Insight.get_schema()
-        )
-
-    def add_control_get_insights(self, user):
+    def add_control_insights_all(self):
         """
         Add a control to get all insights
         """
@@ -160,7 +171,18 @@ class GeodataBuilder(MasonBuilder):
             title="Get all user related insights"
         )
 
-    def add_control_get_feedbacks(self, user):
+    def add_control_insights_by(self, user):
+        """
+        Add a control to get all insights
+        """
+        self.add_control(
+            "user:get-insights",
+            url_for("api.insightcollectionbyuseritem", user=user),
+            method="GET",
+            title="Get all user related insights"
+        )
+
+    def add_control_feedbacks_all(self, user):
         """
         Add a control to get all feedback
         """
@@ -170,6 +192,122 @@ class GeodataBuilder(MasonBuilder):
             method="GET",
             title="Get all user related feedbacks"
         )
+
+    def add_control_feedbacks_by(self, user):
+        """
+        Add a control to get all feedback
+        """
+        self.add_control(
+            "user:get-feedbacks",
+            url_for("api.feedbackcollectionbyuseritem", user=user),
+            method="GET",
+            title="Get all user related feedbacks"
+        )
+
+    def add_control_add_user(self):
+        """
+        Add a control to add a user
+        """
+        self.add_control_post(
+            "geometa:add-user",
+            "Add a new user",
+            url_for("api.usercollection"),
+            schema=User.get_schema()
+        )
+
+    def add_control_add_insight(self, user):
+        """
+        Add a control to add insight
+        """
+        self.add_control_post(
+            "geometa:add-insight",
+            "Add a new insight",
+            url_for("api.insightcollection", user=user.username),
+            schema=Insight.get_schema()
+        )
+
+    def add_control_add_feedback(self, user, insight):
+        """
+        Add a control to add feedback
+        """
+        self.add_control_post(
+            "geometa:add-feedback",
+            "Add a new feedback",
+            url_for("api.feedbackcollection", user=user.username, insight=insight.id),
+            schema=Feedback.get_schema()
+        )
+
+    def add_control_delete_user(self, user):
+        """
+        Add a control to delete a user
+        """
+        self.add_control_delete(
+            "Delete this user", 
+            url_for("api.useritem", user=user.username)
+        )
+
+    def add_control_delete_insight(self, user, insight):
+        """
+        Add a control to delete a insight
+        """
+        self.add_control_delete(
+            "Delete this insight", 
+            url_for("api.insightitem", user=user.username, insight=insight.id)
+        )
+
+    def add_control_delete_feedback(self, user, insight, feedback):
+        """
+        Add a control to delete a feedback
+        """
+        self.add_control_delete(
+            "Delete this feedback", 
+            url_for("api.feedbackitem",
+                    user=user.username,
+                    insight=insight.id,
+                    feedback=feedback.id
+                )
+        )
+
+    def add_control_edit_user(self, user):
+        """
+        Add a control to edit user
+        """
+        self.add_control_put(
+            "Edit this user",
+            url_for("api.useritem", user=user.username),
+            schema=User.get_schema()
+        )
+    
+    def add_control_edit_insight(self, user, insight):
+        """
+        Add a control to edit insight
+        """
+        self.add_control_put(
+            "Edit this insight",
+            url_for("api.insightitem", user=user.username, insight=insight.id),
+            schema=Insight.get_schema()
+        )
+
+    def add_control_edit_feedback(self, user, insight, feedback):
+        """
+        Add a control to edit feedback
+        """
+        self.add_control_put(
+            "Edit this feedback",
+            url_for("api.feedbackitem",
+                    user=user.username,
+                    insight=insight.id,
+                    feedback=feedback.id
+                ),
+            schema=Feedback.get_schema()
+        )
+    
+    def create_error_response(status_code, title, message=None):
+        resource_url = request.path
+        data = MasonBuilder(resource_url=resource_url)
+        data.add_error(title, message)
+        data.add_control("profile", href=ERROR_PROFILE)
+        return Response(json.dumps(data), status_code, mimetype=MASON)
 
 class UserConverter(BaseConverter):
     """
