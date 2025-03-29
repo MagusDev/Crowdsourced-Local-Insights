@@ -8,6 +8,32 @@ from werkzeug.exceptions import Forbidden
 from .models import ApiKey
 
 
+def get_authenticated_user():
+    """
+    Tries to extract the API key from the Authorization header (Bearer scheme)
+    and returns the corresponding User object if the key is valid.
+    """
+    header = request.headers.get("Authorization")
+    if not header:
+        return None
+
+    try:
+        # Supports format: Authorization: Bearer <api_key>
+        prefix, token = header.strip().split(" ", 1)
+        if prefix.lower() != "bearer":
+            return None
+    except ValueError:
+        return None
+
+    key_hash = ApiKey.key_hash(token)
+    api_key = ApiKey.query.filter_by(key=key_hash).first()
+
+    if api_key and api_key.user:
+        return api_key.user
+
+    return None
+
+
 def require_admin(func):
     """
     Decorator to require an admin API key.
