@@ -23,6 +23,7 @@ class InsightItem(Resource):
     """
       Resource for single insight with all the details
     """
+
     @cache.cached()
     def get(self, insight, user=None):
         """
@@ -45,44 +46,117 @@ class InsightItem(Resource):
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-    def put(self, insight):
+
+    def put(self, insight, user=None):
         """
-          Update a single insight
+        Update a single insight.
+        Only the insight creator or an admin can perform this action.
         """
+
+        # 1. Check authentication
+        auth_user = get_authenticated_user()
+        if not auth_user:
+            return GeodataBuilder.create_error_response(
+                401,
+                "Unauthorized",
+                "You must provide a valid API key to update this insight."
+            )
+
+        is_owner = insight.user and insight.user.id == auth_user.id
+        is_admin = auth_user.api_key and auth_user.api_key.admin
+
+        if not (is_owner or is_admin):
+            return GeodataBuilder.create_error_response(
+                403,
+                "Forbidden",
+                "You do not have permission to update this insight."
+            )
+        
+        # 2. Check content type
         if request.content_type != "application/json":
-            raise UnsupportedMediaType
+            return GeodataBuilder.create_error_response(
+                415,
+                "Unsupported Media Type",
+                "Content-Type must be application/json"
+            )
+
+        # 3. Validate request body
         try:
             data = request.get_json()
             validate(data, Insight.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
-            raise BadRequest(description=str(e)) from e
+            return GeodataBuilder.create_error_response(
+                400,
+                "Invalid request body",
+                str(e)
+            )
+        
+        # 4. Perform update
+        insight.title = data["title"]
+        insight.description = data["description"]
+        insight.longitude = data["longitude"]
+        insight.latitude = data["latitude"]
+        insight.image = data["image"]
+        insight.address = data["address"]
+        insight.category = data["category"]
+        insight.subcategory = data["subcategory"]
+        insight.external_link = data["external_link"]
 
-        payload = request.get_json()
-        updated_insight = Insight.query.filter_by(id=insight.id).first()
-        updated_insight.title = payload["title"]
-        updated_insight.description = payload["description"]
-        updated_insight.longitude = payload["longitude"]
-        updated_insight.latitude = payload["latitude"]
-        updated_insight.image = payload["image"]
-        updated_insight.address = payload["address"]
-        updated_insight.category = payload["category"]
-        updated_insight.subcategory = payload["subcategory"]
-        updated_insight.external_link = payload["external_link"]
         db.session.commit()
 
+        # 5. Invalidate cache
         cache.delete(request.path)
 
-        return Response(status=204)
+        # 6. Return updated resource with MASON format (or just 204 if preferred)
+        body = GeodataBuilder(insight.serialize(short_form=False))
+        body["@type"] = "insight"
+        body.add_namespace("geometa", INSIGHT_PROFILE_URL)
+        body.add_control("self", url_for("api.insightitem", insight=insight.id))
+        body.add_control("profile", href=INSIGHT_PROFILE_URL)
+        body.add_control_insights_all()
+        body.add_control_insights_by(user)
+        body.add_control_edit_insight(auth_user, insight)
+        body.add_control_delete_insight(auth_user, insight)
+        body.add_control_insight_collection(user)
 
-    def delete(self, insight):
+        response = Response(json.dumps(body), 200, mimetype=MASON)
+        response.headers["Location"] = url_for("api.insightitem", insight=insight.id)
+        return response
+
+
+    def delete(self, insight, user=None):
         """
-          delete a single insight
+        Delete a single insight.
+        Only the creator of the insight or an admin can delete it.
         """
+
+        # 1. Authenticate the user
+        auth_user = get_authenticated_user()
+        if not auth_user:
+            return GeodataBuilder.create_error_response(
+                401,
+                "Unauthorized",
+                "You must provide a valid API key to delete this insight."
+            )
+
+        is_owner = insight.user and insight.user.id == auth_user.id
+        is_admin = auth_user.api_key and auth_user.api_key.admin
+
+        if not (is_owner or is_admin):
+            return GeodataBuilder.create_error_response(
+                403,
+                "Forbidden",
+                "You do not have permission to delete this insight."
+            )
+
+        # 2. Delete the resource
         db.session.delete(insight)
         db.session.commit()
 
+        # 3. Clear cache
         cache.delete(request.path)
 
+        # 4. Return empty success response
         return Response(status=204)
 
 class InsightCollection(Resource):
