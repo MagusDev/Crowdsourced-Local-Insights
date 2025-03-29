@@ -302,12 +302,42 @@ class GeodataBuilder(MasonBuilder):
             schema=Feedback.get_schema()
         )
     
+    @staticmethod
     def create_error_response(status_code, title, message=None):
-        resource_url = request.path
-        data = MasonBuilder(resource_url=resource_url)
-        data.add_error(title, message)
-        data.add_control("profile", href=ERROR_PROFILE)
-        return Response(json.dumps(data), status_code, mimetype=MASON)
+        """
+        Create a MASON-compatible error response with helpful controls.
+        """
+        builder = GeodataBuilder()
+        builder["@type"] = "error"
+        builder.add_namespace("error", ERROR_PROFILE)
+        builder.add_error(title, message)
+
+        # Add a standard error profile link
+        builder.add_control("profile", href=ERROR_PROFILE)
+
+        # Add a 'self' link to the current request path
+        builder.add_control("self", href=request.path)
+
+        # Add useful controls based on status code
+        if status_code == 401:
+            # Suggest login for unauthorized requests
+            builder.add_control(
+                "auth:login",
+                href=url_for("api.usercollection"),  # Could point to login endpoint
+                method="POST",
+                encoding="json",
+                title="Authenticate with API key"
+            )
+
+        if status_code == 403:
+            # Provide link back to main insights collection
+            builder.add_control("home", href=url_for("api.insightcollection"))
+
+        if status_code == 400:
+            # Suggest retrying the current action
+            builder.add_control("retry", href=request.path, method="POST")
+            
+        return Response(json.dumps(builder), status=status_code, mimetype=MASON)
 
 class UserConverter(BaseConverter):
     """
