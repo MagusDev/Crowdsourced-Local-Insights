@@ -278,7 +278,6 @@ class Feedback(db.Model):
 
 class ApiKey(db.Model):
     
-    
     key = db.Column(db.String(32), nullable=False, unique=True, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     admin =  db.Column(db.Boolean, default=False)
