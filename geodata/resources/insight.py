@@ -26,24 +26,24 @@ class InsightItem(Resource):
     @cache.cached()
     def get(self, insight, user=None):
         """
-          Get a single insight by id
+        Retrieve a single insight by its ID.
+        No authentication required. Returns full details.
         """
-        response = {
-            "id": insight.id,
-            "title": insight.title,
-            "description": insight.description,
-            "longitude": insight.longitude,
-            "latitude": insight.latitude,
-            "image": insight.image,
-            "created_date": insight.created_date.isoformat(),
-            "modified_date": insight.modified_date.isoformat(),
-            "creator": insight.creator,
-            "category": insight.category,
-            "subcategory": insight.subcategory,
-            "external_link": insight.external_link,
-            "address": insight.address
-        }
-        return response, 200
+        # Determine authenticated user via API key
+        auth_user = get_authenticated_user()
+
+        body = GeodataBuilder(insight.serialize(short_form=False))
+        body["@type"] = "insight"
+        body.add_namespace("geometa", LINK_RELATIONS_URL)
+        body.add_control("self", url_for("api.insightitem", insight=insight.id))
+        body.add_control("profile", href=INSIGHT_PROFILE_URL)
+        body.add_control_insights_all()
+        body.add_control_insights_by(user)
+        body.add_control_edit_insight(auth_user, insight)
+        body.add_control_delete_insight(auth_user, insight)
+        body.add_control_insight_collection(user)
+
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def put(self, insight):
         """
@@ -107,10 +107,16 @@ class InsightCollection(Resource):
         and hypermedia controls for navigation and interaction.
         """
         if user:
-            # 1. Build and execute the query with given username
-            insights = self._fetch_insights({"username": user})
+            # 1. Fetch and validate query parameters
+            params, error_response = self._parse_and_validate_params()
+            if error_response:
+                return error_response
+            
+            # 2. Build and execute the query with given username in the path
+            params["username"] = user
+            insights = self._fetch_insights(params)
 
-            # 2. Construct the MASON-formatted response body
+            # 3. Construct the MASON-formatted response body
             body = self._build_insight_collection_response(insights, user)
 
             return Response(json.dumps(body), 200, mimetype=MASON)
