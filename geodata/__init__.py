@@ -22,7 +22,7 @@ def create_app(test_config=None):
 
         app.config["SWAGGER"] = {
             "title": "Crowdsourced local insights API",
-            "openapi": "1.0.0",
+            "openapi": "3.0.0",
             "uiversion": 3,
         }
         Swagger(app, template_file="doc/swaggerdoc.yml")
