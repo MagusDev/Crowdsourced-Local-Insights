@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
 from flask import request, Response, url_for
-from constants import MASON, ERROR_PROFILE
+from constants import *
 
 from geodata.models import User, Insight, Feedback
 
@@ -162,25 +162,31 @@ class GeodataBuilder(MasonBuilder):
 
     def add_control_insights_all(self):
         """
-        Add a control to get all insights
+        Add a control to get all insights with optional
+        filters (bbox, category, subcategory).
         """
         self.add_control(
-            "user:get-insights",
-            url_for("api.insightcollectionbyuseritem", user=user),
+            "geometa:insights-all",
+            url_for("api.insightcollection") + "{?bbox,usr,ic,isc}",
+            isHrefTemplate=True,
             method="GET",
-            title="Get all user related insights"
+            title="Get all insights with optional filters",
+            description="Query parameters: bbox=25.4,65.0,25.6,65.1 | usr=username | ic=category | isc=subcategory"
         )
 
     def add_control_insights_by(self, user):
         """
-        Add a control to get all insights
+        Add a control to get all insights created by the specified user,
+        with optional filters (bbox, category, subcategory).
         """
-        self.add_control(
-            "user:get-insights",
-            url_for("api.insightcollectionbyuseritem", user=user),
-            method="GET",
-            title="Get all user related insights"
-        )
+        if user:
+            self.add_control(
+                "geometa:insights-by",
+                url_for("api.insightcollection", user=user.username),
+                method="GET",
+                title="Get all user related insights with optional filters",
+                description="Query parameters: bbox=25.4,65.0,25.6,65.1 | ic=category | isc=subcategory"
+            )
 
     def add_control_feedbacks_all(self, user):
         """
@@ -219,10 +225,15 @@ class GeodataBuilder(MasonBuilder):
         """
         Add a control to add insight
         """
+        if user:
+            href = url_for("api.insightcollectionbyuseritem", user=user.username)
+        else:
+            href = url_for("api.insightcollection")
+
         self.add_control_post(
             "geometa:add-insight",
             "Add a new insight",
-            url_for("api.insightcollection", user=user.username),
+            href,
             schema=Insight.get_schema()
         )
 
@@ -250,10 +261,11 @@ class GeodataBuilder(MasonBuilder):
         """
         Add a control to delete a insight
         """
-        self.add_control_delete(
-            "Delete this insight", 
-            url_for("api.insightitem", user=user.username, insight=insight.id)
-        )
+        if user:
+            self.add_control_delete(
+                "Delete this insight", 
+                url_for("api.insightitem", user=user.username, insight=insight.id)
+            )
 
     def add_control_delete_feedback(self, user, insight, feedback):
         """
@@ -282,11 +294,12 @@ class GeodataBuilder(MasonBuilder):
         """
         Add a control to edit insight
         """
-        self.add_control_put(
-            "Edit this insight",
-            url_for("api.insightitem", user=user.username, insight=insight.id),
-            schema=Insight.get_schema()
-        )
+        if user:
+            self.add_control_put(
+                "Edit this insight",
+                url_for("api.insightitem", user=user.username, insight=insight.id),
+                schema=Insight.get_schema()
+            )
 
     def add_control_edit_feedback(self, user, insight, feedback):
         """
@@ -301,6 +314,67 @@ class GeodataBuilder(MasonBuilder):
                 ),
             schema=Feedback.get_schema()
         )
+
+    def add_control_insight_collection(self, user=None):
+        """
+        Add controls to retrieve insight collections:
+        - All insights
+        - User related insights (if user is provided)
+        """
+        self.add_control(
+            "geometa:insightcollection",
+            url_for("api.insightcollection"),
+            method="GET",
+            title="Get all insigths",
+            description="Fetches all insights. Optional query parameters: bbox, usr, ic, isc"
+        )
+
+        if user:
+            self.add_control(
+                "geometa:user-insightcollection",
+                url_for("api.insightcollection", user=user.username),
+                method="GET",
+                title="Get all user related insigths",
+                description="Fetches all insights created by the specified user."
+            )
+
+    def add_control_feedback_collection(self, user, authuser=None, insight=None):
+        """
+        Add controls to retrieve feedback collections:
+        - All feedbacks by a user (if user and authuser match)
+        - All feedbacks related to a specific insight (if insight and user is provided)
+        """
+
+        if user and authuser and user.username == authuser.username:
+            self.add_control(
+                "geometa:user-feedbackcollection",
+                url_for("api.feedbackcollection", user=user.username),
+                method="GET",
+                title="Get all feedbacks by user",
+                description="Fetches all feedbacks submitted by the authenticated user."
+            )
+
+        if user and insight:
+            self.add_control(
+                "geometa:insight-feedbackcollection",
+                url_for("api.feedbackcollection", user=user.username, insight=insight.id),
+                method="GET",
+                title="Get all feedbacks for insight",
+                description="Fetches all feedbacks related to this specific insight."
+            )
+
+    def add_control_user_collection(self, admin):
+        """
+        Add control to retrieve user collection (admin only)
+        """
+        if admin:
+            self.add_control(
+                "geometa:usercollection",
+                url_for("api.usercollection"),
+                method="GET",
+                title="Get all users",
+                description="Fetches the list of all registered users (admin access required)."
+            )
     
     @staticmethod
     def create_error_response(status_code, title, message=None):
@@ -309,7 +383,7 @@ class GeodataBuilder(MasonBuilder):
         """
         builder = GeodataBuilder()
         builder["@type"] = "error"
-        builder.add_namespace("error", ERROR_PROFILE)
+        builder.add_namespace("geometa", LINK_RELATIONS_URL)
         builder.add_error(title, message)
 
         # Add a standard error profile link
