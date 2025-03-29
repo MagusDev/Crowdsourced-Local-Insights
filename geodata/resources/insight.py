@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from jsonschema import validate, ValidationError, Draft7Validator
 from constants import *
 from geodata import db
+from geodata.auth import require_admin, require_user_auth, get_authenticated_user
 from geodata.constants import MASON
 from geodata.models import Insight, User
 from geodata.utils import GeodataBuilder
@@ -127,39 +128,80 @@ class InsightCollection(Resource):
 
             return Response(json.dumps(body), 200, mimetype=MASON)
 
-    def post(self, user):
-        """
-            create a new insight
-        """
-        if request.content_type != "application/json":
-            raise UnsupportedMediaType
 
+    def post(self, user=None):
+        """
+        Create a new insight.
+
+        If a username is provided in the path, the request must include a valid
+        API key via Authorization: Bearer <token>, and the key must belong to that user.
+
+        If no username is provided, the insight can be added anonymously.
+        """
+
+        # Require content-type to be JSON
+        if request.content_type != "application/json":
+            return GeodataBuilder.create_error_response(
+                415,
+                "Unsupported Media Type",
+                "Content-Type must be application/json"
+            )
+
+        # Determine authenticated user via API key
+        auth_user = get_authenticated_user()
+
+        if user:
+            # Auth required: user must be authenticated and match path user
+            if not auth_user:
+                return GeodataBuilder.create_error_response(
+                    403,
+                    "Authentication required",
+                    "You must authenticate to post as a user."
+                )
+
+            if auth_user.username != user:
+                return GeodataBuilder.create_error_response(
+                    403,
+                    "Forbidden",
+                    "You are not allowed to post as another user."
+                )
+            creator_id = auth_user.id
+        else:
+            # Anonymous posting
+            creator_id = None
+
+        # Validate request body against schema
         try:
             data = request.get_json()
             validate(data, Insight.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
-            raise BadRequest(description=str(e)) from e
-
-        payload = request.get_json()
+            return GeodataBuilder.create_error_response(
+                400,
+                "Invalid request data",
+                str(e)
+            )
+        
+        # Create new Insight
         new_insight = Insight(
-            creator = user.id,
-            title=payload["title"],
-            description=payload["description"],
-            longitude=payload["longitude"],
-            latitude=payload["latitude"],
-            image=payload["image"],
-            address=payload["address"],
-            category=payload["category"],
-            subcategory=payload["subcategory"],
-            external_link=payload["external_link"],
+            creator=creator_id,
+            title=data["title"],
+            description=data.get("description"),
+            longitude=data["longitude"],
+            latitude=data["latitude"],
+            image=data.get("image"),
+            address=data.get("address"),
+            category=data.get("category"),
+            subcategory=data.get("subcategory"),
+            external_link=data.get("external_link"),
             created_date=datetime.now(),
             modified_date=datetime.now()
         )
+
         db.session.add(new_insight)
         db.session.commit()
 
         response = Response(status=201)
-        response.headers["Location"] = url_for("api.insightitem", insight=new_insight)
+        response.headers["Location"] = url_for("api.insightitem", insight=new_insight.id)
 
         return response
 
