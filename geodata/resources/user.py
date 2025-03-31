@@ -18,7 +18,6 @@ from geodata.models import ApiKey
 
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
-
 class UserCollection(flask_restful.Resource):
     """Resource for handling user collection"""
 
@@ -96,7 +95,7 @@ class UserItem(flask_restful.Resource):
     """Resource for handling individual users"""
 
     def get(self, user):
-        """Get user by username"""
+        """Get user by username or email"""
 
         body = GeodataBuilder(
             id = user.id,
@@ -121,7 +120,7 @@ class UserItem(flask_restful.Resource):
 
     @require_user_auth
     def put(self, user):
-        """Update user by username"""
+        """Update user by username or email"""
 
         if request.content_type != "application/json":
             raise UnsupportedMediaType

@@ -1,0 +1,12 @@
+tags:
+  - users
+description: Delete user by username or email
+security:
+  - localInsightsApiKey: [ ]
+parameters:
+  - $ref: '#/components/parameters/user'
+responses:
+    '204':
+      description: User deleted successfully
+    '404':
+      description: User not found

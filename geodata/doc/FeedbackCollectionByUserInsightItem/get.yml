@@ -1,0 +1,24 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+  - $ref: '#/components/parameters/insight'
+tags:
+  - feedbacks
+description: Get all feedbacks of a specific insight
+responses:
+  '200':
+    description: Get list of insight feedbacks
+    content:
+      application/json:
+        example:
+          - id: 1
+            rating: 5
+            comment: Great insight
+            user: johndoe
+            insight: 1
+          - id: 2
+            rating: 4
+            comment: Very informative
+            user: jane
+            insight: 1
+  '500':
+    description: Internal server error

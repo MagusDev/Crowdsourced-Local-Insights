@@ -1,0 +1,22 @@
+tags:
+  - users
+description: Get all users
+responses:
+  '200':
+    description: Get list of users
+    content:
+      application/json:
+        example:
+          - id: 1
+            full_name: John Doe
+            username: johndoe
+            email: user1@gmail.com
+            status: ACTIVE
+          - id: 2
+            full_name: John Anderson
+            username: johnaderson
+            email: user2@gmail.com
+            status: INACTIVE
+
+  '500':
+    description: Internal server error

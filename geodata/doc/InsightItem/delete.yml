@@ -1,0 +1,10 @@
+parameters:
+- $ref: '#/components/parameters/insight'
+tags:
+  - insights
+description: Delete insight by ID
+responses:
+    '204':
+      description: Insight deleted successfully
+    '404':
+      description: Insight not found

@@ -1,0 +1,27 @@
+parameters:
+- $ref: '#/components/parameters/insight'
+tags:
+  - insights
+description: Get insight detail by ID
+responses:
+    '200':
+      description: Get single insight info successfully
+      content:
+        application/json:
+          example:
+            id: 1
+            title: K City Market
+            description: K City Market
+            longitude: 12.345678
+            latitude: 34.567890
+            image: http://totally.not.placehold.er/
+            created_date: 2023-10-01
+            modified_date: 2023-10-01
+            creator: 12345
+            address: Oulu, Finland
+            category: test category
+            subcategory: test subcategory
+            external_link: http://totally.not.placehold.er/
+
+    '404':
+      description: Insight not found

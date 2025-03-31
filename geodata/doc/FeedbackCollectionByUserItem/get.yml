@@ -1,0 +1,23 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+tags:
+  - feedbacks
+description: Get all feedbacks of a specific user
+responses:
+  '200':
+    description: Get user feedbacks successfully
+    content:
+      application/json:
+        example:
+          - id: 1
+            rating: 5
+            comment: Great insight
+            user: john
+            insight: 1
+          - id: 2
+            rating: 4
+            comment: Very informative
+            user: jane
+            insight: 1
+  '500':
+    description: Internal server error

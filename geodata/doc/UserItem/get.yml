@@ -1,0 +1,39 @@
+tags:
+  - users
+description: Get user by username or email
+parameters:
+  - $ref: '#/components/parameters/user'
+responses:
+    '200':
+      description: Get single user info successfully
+      content:
+        application/json:
+          examples:
+            normalUser:
+              description: normal user
+              value:
+                id: 1
+                username: johndoe
+                email: user1.gmail.com
+                first_name: John
+                last_name: Doe
+                created_date: 2023-10-01
+                modified_date: 2023-10-01
+                status: ACTIVE
+                role: USER
+                profile_picture: http://totally.not.placehold.er/
+            adminUser:
+              description: admin user
+              value:
+                id: 2
+                username: johndoe
+                email: user1.gmail.com
+                first_name: John
+                last_name: Doe
+                created_date: 2023-10-01
+                modified_date: 2023-10-01
+                status: ACTIVE
+                role: ADMIN
+                profile_picture: http://totally.not.placehold.er/
+    '404':
+      description: User not found

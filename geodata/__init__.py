@@ -2,6 +2,7 @@
 This module init app and sets up the db.
 """
 import os
+import yaml
 from flasgger import Swagger
 from flask import Flask
 from flask_caching import Cache
@@ -24,8 +25,9 @@ def create_app(test_config=None):
             "title": "Crowdsourced local insights API",
             "openapi": "3.0.0",
             "uiversion": 3,
+            "doc_dir": "./geodata/doc"
         }
-        Swagger(app, template_file="doc/swaggerdoc.yml")
+        Swagger(app, template_file="doc/swagger_base.yml")
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = test_config["SQLALCHEMY_DATABASE_URI"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

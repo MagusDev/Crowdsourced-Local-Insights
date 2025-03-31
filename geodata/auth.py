@@ -3,6 +3,8 @@ Authentication module for the API.
 """
 
 import secrets
+from functools import wraps
+
 from flask import request
 from werkzeug.exceptions import Forbidden
 from .models import ApiKey
@@ -28,6 +30,7 @@ def require_user_auth(func):
     Decorator to require a user API key.
     Mainly used for user specific endpoints put and delete methods.
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
         user = kwargs.get('user')  # Get the user from kwargs
 

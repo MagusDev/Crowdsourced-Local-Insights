@@ -67,8 +67,6 @@ class FeedbackCollectionByUserInsightItem(Resource):
 
         return response
 
-
-
 class FeedbackCollectionByUserItem(Resource):
     """
     Resource for handling feedback collection by user.
@@ -94,7 +92,6 @@ class FeedbackCollectionByUserItem(Resource):
 
         return response
 
-
 class FeedbackItemByUserInsightItem(Resource):
     """
     Resource for handling feedback item by user and insight.
@@ -117,7 +114,6 @@ class FeedbackItemByUserInsightItem(Resource):
         }
 
         return response
-
 
     def put(self,user,insight, feedback):
         """
@@ -143,9 +139,6 @@ class FeedbackItemByUserInsightItem(Resource):
         cache.delete(request.path)
 
         return Response(status=204)
-
-
-
 
     def delete(self,user,insight, feedback):
         """

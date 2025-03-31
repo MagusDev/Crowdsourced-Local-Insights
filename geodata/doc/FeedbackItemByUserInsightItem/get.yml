@@ -1,0 +1,21 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+  - $ref: '#/components/parameters/insight'
+  - $ref: '#/components/parameters/feedback'
+
+tags:
+  - feedbacks
+description: Get feedback by ID
+responses:
+    '200':
+      description: Get single feedback info successfully
+      content:
+        application/json:
+          example:
+            id: 1
+            rating: 5
+            comment: Great insight
+            user: johndoe
+            insight: 1
+    '404':
+      description: Feedback not found

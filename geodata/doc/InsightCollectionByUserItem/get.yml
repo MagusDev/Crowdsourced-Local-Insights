@@ -1,0 +1,27 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+tags:
+  - insights
+description: Get all insights of a specific user
+responses:
+  '200':
+    description: Get list of user insights
+    content:
+      application/json:
+        example:
+          - id: 1
+            title: Insight 1
+            description: Description of insight 1
+            longitude: 12.345678
+            latitude: 34.567890
+            category: Category of insight 1
+            created_date: 2023-10-01
+          - id: 2
+            title: Insight 2
+            description: Description of insight 2
+            longitude: 23.456789
+            latitude: 45.678901
+            category: Category of insight 2
+            created_date: 2023-10-01
+  '500':
+    description: Internal server error

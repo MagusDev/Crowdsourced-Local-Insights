@@ -1,0 +1,30 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+  - $ref: '#/components/parameters/insight'
+tags:
+  - feedbacks
+description: User create a new feedback under a insight
+requestBody:
+  description: JSON data contain feedback required fields
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/Feedback'
+      example:
+        user_id: 12345
+        insight_id: 1
+        rating: 5
+        comment: Great insight
+
+responses:
+  '201':
+    description: Feedback created successfully
+    headers:
+      Location:
+        description: URI of newly created feedback
+        schema:
+          type: string
+  '415':
+    description: Request content type must be JSON
+  '400':
+    description: Incomplete request
