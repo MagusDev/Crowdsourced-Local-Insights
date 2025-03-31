@@ -127,6 +127,14 @@ class User(db.Model):
         if isinstance(role_enum, RoleEnum):
             self.role = role_enum.name
 
+    def is_admin(self):
+        return self.role_enum == RoleEnum.ADMIN
+
+    def is_owner_or_admin(self, other_user_id):
+        return self.id == other_user_id or self.is_admin()
+
+
+
     @staticmethod
     def get_schema():
         """
