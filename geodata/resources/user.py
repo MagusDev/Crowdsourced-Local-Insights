@@ -202,8 +202,27 @@ class UserItem(flask_restful.Resource):
 
     @require_user_auth
     def delete(self, user):
-        """Delete user by username"""
+        """
+        Delete a user by username.
+        Allowed only for the account owner or an admin.
+        """
 
-        db.session.delete(user)
-        db.session.commit()
+        current_user = get_authenticated_user()
+
+        if not current_user or not current_user.is_owner_or_admin(user.id):
+            return GeodataBuilder.create_error_response(
+                403,
+                "You are not authorized to deactivate this user."
+            )
+
+        try:
+            db.session.delete(user)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            return GeodataBuilder.create_error_response(
+                500,
+                "Failed to delete user."
+            )
+
         return Response(status=204)
