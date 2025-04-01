@@ -23,25 +23,35 @@ class UserCollection(flask_restful.Resource):
     """Resource for handling user collection"""
 
     def get(self):
-        """Get all users"""
+        """
+        Retrieve a collection of users in Mason format.
+
+        Returns a list of users with limited public information (short form).
+        Adds Mason controls for self, user creation, and individual user access.
+        """
+
         body = GeodataBuilder()
 
         body["@type"] = "users"
         body.add_control("self", url_for("api.usercollection"))
         body.add_control_add_user()
         body["items"] = []
-        # TODO
         for user in User.query.all():
             item = user.serialize(short_form=True)
-            body["@type"] = "user"
-            body.add_control("self", url_for("api.useritem", user=self.username))
-            body.add_control("profile", href=USER_PROFILE_URL)
+            item["@type"] = "user"
+            item.add_control("self", url_for("api.useritem", user=user.username))
+            item.add_control("profile", href=USER_PROFILE_URL)
             body["items"].append(item)
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
     def post(self):
-        """Create new user"""
+        """
+        Register a new user with a unique username and email.
+        Validates request body against user schema, hashes the password, 
+        creates a default API key, and returns the created user in Mason format.
+        """
+
         if request.content_type != "application/json":
             raise UnsupportedMediaType
 
@@ -59,12 +69,17 @@ class UserCollection(flask_restful.Resource):
         new_user = User(
             username=data["username"],
             email=data["email"],
-            password=User().hash_password(data["password"]),
+            password=User.hash_password(data["password"]),
             first_name=data["first_name"],
             last_name=data.get("last_name", "")
         )
-        db.session.add(new_user)
-        db.session.commit()
+        with db.session.begin():
+            db.session.add(new_user)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return GeodataBuilder.create_error_response(409, "Database integrity error.")
 
         api_key_str = secrets.token_urlsafe(32)
         api_key = ApiKey(
@@ -72,8 +87,13 @@ class UserCollection(flask_restful.Resource):
             key=ApiKey.key_hash(api_key_str),
             admin=False,
         )
-        db.session.add(api_key)
-        db.session.commit()
+        with db.session.begin():
+            db.session.add(api_key)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return GeodataBuilder.create_error_response(409, "Database integrity error.")
 
         body = GeodataBuilder(
             id = new_user.id,
@@ -82,9 +102,10 @@ class UserCollection(flask_restful.Resource):
         )
         body["@type"] = "user"
         body["api_key"] = api_key_str
-        body.add_control("self", url_for("api.useritem", user=new_user))
+        body.add_control("self", url_for("api.useritem", user=new_user.username))
+        body.add_control_user_collection()
         response = Response(json.dumps(body), 201, mimetype=MASON)
-        response.headers["Location"] = url_for("api.useritem", user=new_user)
+        response.headers["Location"] = url_for("api.useritem", user=new_user.username)
         return response
 
 class UserItem(flask_restful.Resource):
@@ -135,7 +156,7 @@ class UserItem(flask_restful.Resource):
         current_user = get_authenticated_user()
 
         # Check permissions
-        if not current_user or (current_user.is_owner_or_admin(user.id)):
+        if not current_user or not current_user.is_owner_or_admin(user.id):
             return GeodataBuilder.create_error_response(
                 403,
                 "You are not authorized to update this user."
@@ -182,7 +203,7 @@ class UserItem(flask_restful.Resource):
 
         try:
             db.session.commit()
-        except IntegrityError:
+        except IntegrityError as e:
             db.session.rollback()
             return GeodataBuilder.create_error_response(
                 409,
