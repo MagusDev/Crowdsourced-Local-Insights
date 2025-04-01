@@ -6,7 +6,6 @@ import hashlib
 from flask import url_for
 import werkzeug.security
 from geodata import db
-from utils import GeodataBuilder
 from PIL import Image
 import io
 import base64
@@ -39,7 +38,7 @@ class User(db.Model):
     username = db.Column(db.String(32), unique=True, nullable=False)
     email = db.Column(db.String(64), unique=True, nullable=False)
     phone = db.Column(db.Integer, unique=True, nullable=True)
-    password = db.Column(db.String(64), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
     first_name = db.Column(db.String(32), nullable=False)
     last_name = db.Column(db.String(32), nullable=True)
     created_date = db.Column(db.DateTime, default=db.func.now(), nullable=False)
@@ -60,24 +59,27 @@ class User(db.Model):
     api_key = db.relationship("ApiKey", back_populates="user", uselist=False)
 
     def serialize(self, short_form=False):
-        data = GeodataBuilder(
-            username=self.username,
-            first_name=self.first_name,
-            last_name=self.last_name,
-            status=self.status,
-            role=self.role,
-            profile_picture_thumb=self.profile_picture_thumb
-        )
+        data = {
+            "username": self.username,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "status": self.status,
+            "role": self.role,
+            "profile_picture_thumb": self.profile_picture_thumb
+        }
 
         if short_form:
             return data
 
-        # Full serializing begins here
-        data["email"] = self.email
-        data["phone"] = self.phone
-        data["created_date"] = self.created_date.isoformat() if self.created_date else None
-        data["modified_date"] = self.modified_date.isoformat() if self.modified_date else None
-        data["profile_picture"] = self.profile_picture     
+        # Full serialization
+        data.update({
+            "email": self.email,
+            "phone": self.phone,
+            "created_date": self.created_date.isoformat() if self.created_date else None,
+            "modified_date": self.modified_date.isoformat() if self.modified_date else None,
+            "profile_picture": self.profile_picture
+        })
+
         return data
 
     def hash_password(self, password):
@@ -156,6 +158,7 @@ class User(db.Model):
         props["profile_picture"] = {"type": "string"}
         return schema
     
+    @staticmethod
     def generate_thumbnail(image_data_base64, size=(64, 64)):
         image_data = base64.b64decode(image_data_base64)
         image = Image.open(io.BytesIO(image_data))
@@ -269,6 +272,18 @@ class Feedback(db.Model):
 
     user = db.relationship("User", back_populates="feedback", uselist=False)
     insight = db.relationship("Insight", back_populates="feedback")
+
+    def serialize(self):
+        return {
+            "@type": "feedback",
+            "id": self.id,
+            "rating": self.rating,
+            "comment": self.comment,
+            "user": self.user.username if self.user else None,
+            "insight": self.insight.id if self.insight else None,
+            "created_date": self.created_date.isoformat() if self.created_date else None,
+            "modified_date": self.modified_date.isoformat() if self.modified_date else None,
+        }
 
     @staticmethod
     def get_schema():
