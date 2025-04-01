@@ -267,17 +267,13 @@ class GeodataBuilder(MasonBuilder):
                 url_for("api.insightitem", user=user.username, insight=insight.id)
             )
 
-    def add_control_delete_feedback(self, user, insight, feedback):
+    def add_control_delete_feedback(self, fb_url):
         """
         Add a control to delete a feedback
         """
         self.add_control_delete(
             "Delete this feedback", 
-            url_for("api.feedbackitem",
-                    user=user.username,
-                    insight=insight.id,
-                    feedback=feedback.id
-                )
+            fb_url
         )
 
     def add_control_edit_user(self, user):
@@ -301,17 +297,13 @@ class GeodataBuilder(MasonBuilder):
                 schema=Insight.get_schema()
             )
 
-    def add_control_edit_feedback(self, user, insight, feedback):
+    def add_control_edit_feedback(self, fb_url):
         """
         Add a control to edit feedback
         """
         self.add_control_put(
             "Edit this feedback",
-            url_for("api.feedbackitem",
-                    user=user.username,
-                    insight=insight.id,
-                    feedback=feedback.id
-                ),
+            fb_url,
             schema=Feedback.get_schema()
         )
 
