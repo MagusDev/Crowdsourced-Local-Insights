@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Feedback Profile</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 900px; margin: auto; }
+    code { background-color: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    h1, h2 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background-color: #f0f0f0; }
+    pre { background-color: #f4f4f4; padding: 1rem; overflow-x: auto; }
+    section { margin-top: 2rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Feedback Resource Profile</h1>
+  <p>
+    This profile describes the <code>feedback</code> resource in the GeoData API.
+    A feedback is a user-generated evaluation of an insight. It may contain a rating (1–5) and an optional comment.
+  </p>
+
+  <section>
+    <h2>Attributes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>id</td><td>integer</td><td>No</td><td>Unique identifier for the feedback</td></tr>
+        <tr><td>rating</td><td>integer (1–5)</td><td>No</td><td>Numerical rating for the insight</td></tr>
+        <tr><td>comment</td><td>string</td><td>No</td><td>Optional written comment</td></tr>
+        <tr><td>user</td><td>string</td><td>No</td><td>Username of the author</td></tr>
+        <tr><td>insight</td><td>integer</td><td>Yes</td><td>ID of the related insight</td></tr>
+        <tr><td>created_date</td><td>datetime</td><td>No</td><td>When feedback was created</td></tr>
+        <tr><td>modified_date</td><td>datetime</td><td>No</td><td>When feedback was last updated</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Supported Actions</h2>
+    <ul>
+      <li><strong>GET</strong> — Retrieve feedback details</li>
+      <li><strong>POST</strong> — Submit a new feedback</li>
+      <li><strong>PUT</strong> — Update your own feedback</li>
+      <li><strong>DELETE</strong> — Delete your own feedback</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Hypermedia Controls</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Control Name</th>
+          <th>Method</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>self</td><td>GET</td><td>Link to this feedback resource</td></tr>
+        <tr><td>edit</td><td>PUT</td><td>Edit this feedback</td></tr>
+        <tr><td>delete</td><td>DELETE</td><td>Delete this feedback</td></tr>
+        <tr><td>profile</td><td>GET</td><td>Link to this profile document</td></tr>
+        <tr><td>author</td><td>GET</td><td>Link to feedback author's user resource</td></tr>
+        <tr><td>up</td><td>GET</td><td>Link to parent insight or feedback collection</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Example</h2>
+    <pre>{
+  "id": 45,
+  "rating": 5,
+  "comment": "Clean beach and friendly staff. Highly recommended!",
+  "user": "mikko_oulu",
+  "insight": 123,
+  "created_date": "2025-03-28T17:02:00Z",
+  "modified_date": "2025-03-28T17:10:00Z"
+}</pre>
+  </section>
+
+</body>
+</html>

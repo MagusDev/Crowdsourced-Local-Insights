@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Link Relations - GeoData API</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 900px; margin: auto; }
+    h1, h2 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background-color: #f0f0f0; }
+    section { margin-top: 2rem; }
+    code { background-color: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <h1>Link Relations in GeoData API</h1>
+  <p>
+    This document defines the custom and common link relations used throughout the GeoData API.
+    These relations help clients understand the semantics of available links and actions in the hypermedia responses.
+  </p>
+
+  <section>
+    <h2>GeoMeta Link Relations (Namespace: <code>geometa</code>)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Relation</th>
+          <th>Description</th>
+          <th>Methods</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>geometa:add-user</code></td>
+          <td>Create a new user</td>
+          <td>POST</td>
+        </tr>
+        <tr>
+          <td><code>geometa:add-insight</code></td>
+          <td>Create a new insight</td>
+          <td>POST</td>
+        </tr>
+        <tr>
+          <td><code>geometa:add-feedback</code></td>
+          <td>Create feedback on an insight</td>
+          <td>POST</td>
+        </tr>
+        <tr>
+          <td><code>geometa:insights-all</code></td>
+          <td>List all insights (optionally filtered by location or category)</td>
+          <td>GET</td>
+        </tr>
+        <tr>
+          <td><code>geometa:insights-by</code></td>
+          <td>List insights created by a specific user</td>
+          <td>GET</td>
+        </tr>
+        <tr>
+          <td><code>geometa:insight-feedbackcollection</code></td>
+          <td>List all feedbacks related to an insight</td>
+          <td>GET</td>
+        </tr>
+        <tr>
+          <td><code>geometa:user-feedbackcollection</code></td>
+          <td>List all feedbacks created by the authenticated user</td>
+          <td>GET</td>
+        </tr>
+        <tr>
+          <td><code>geometa:user-insightcollection</code></td>
+          <td>List all insights created by a specific user</td>
+          <td>GET</td>
+        </tr>
+        <tr>
+          <td><code>geometa:usercollection</code></td>
+          <td>List all users (admin only)</td>
+          <td>GET</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Standard Link Relations</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Relation</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>self</code></td>
+          <td>Canonical link to the current resource</td>
+        </tr>
+        <tr>
+          <td><code>profile</code></td>
+          <td>Link to the resource's profile document</td>
+        </tr>
+        <tr>
+          <td><code>edit</code></td>
+          <td>Update the current resource</td>
+        </tr>
+        <tr>
+          <td><code>delete</code></td>
+          <td>Delete the current resource</td>
+        </tr>
+        <tr>
+          <td><code>up</code></td>
+          <td>Parent resource or collection</td>
+        </tr>
+        <tr>
+          <td><code>author</code></td>
+          <td>Link to the creator/owner of the resource</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Authentication Link Relations</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Relation</th>
+          <th>Description</th>
+          <th>Methods</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>auth:login</code></td>
+          <td>Submit API key or credentials for authentication</td>
+          <td>POST</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</body>
+</html>

@@ -4,7 +4,7 @@ This module init app and sets up the db.
 import os
 import yaml
 from flasgger import Swagger
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_caching import Cache
 from flask_sqlalchemy import SQLAlchemy
 
@@ -16,7 +16,7 @@ def create_app(test_config=None):
     """
     Create and config app
     """
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="static")
     if test_config is None:
         filepath = os.path.abspath(os.getcwd()) + "/db/geodata.db"
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + filepath
@@ -45,5 +45,13 @@ def create_app(test_config=None):
     app.url_map.converters["insight"] = InsightConverter
     app.url_map.converters["feedback"] = FeedbackConverter
     app.register_blueprint(api_bp)
+
+    @app.route("/profiles/<resource>/")
+    def send_profile_html(resource):
+        return send_from_directory(app.static_folder, "{}.html".format(resource))
+    
+    @app.route("/geodata/link-relations/")
+    def send_link_relations_html():
+        return send_from_directory(app.static_folder, "links-relations.html")
 
     return app

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Insight Profile</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 900px; margin: auto; }
+    code { background-color: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    h1, h2 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background-color: #f0f0f0; }
+    pre { background-color: #f4f4f4; padding: 1rem; overflow-x: auto; }
+    section { margin-top: 2rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Insight Resource Profile</h1>
+  <p>
+    This profile describes the <code>insight</code> resource in the GeoData API.
+    An insight represents a geolocated idea, suggestion, or observation created by users. 
+    It includes location, metadata, and optional media and categorization.
+  </p>
+
+  <section>
+    <h2>Attributes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>id</td><td>integer</td><td>No</td><td>Unique identifier</td></tr>
+        <tr><td>title</td><td>string</td><td>Yes</td><td>Insight title</td></tr>
+        <tr><td>description</td><td>string</td><td>No</td><td>Longer description of the insight</td></tr>
+        <tr><td>longitude</td><td>number</td><td>Yes</td><td>Longitude (-180 to 180)</td></tr>
+        <tr><td>latitude</td><td>number</td><td>Yes</td><td>Latitude (-90 to 90)</td></tr>
+        <tr><td>image</td><td>string</td><td>No</td><td>Image file name or URL</td></tr>
+        <tr><td>address</td><td>string</td><td>No</td><td>Location address</td></tr>
+        <tr><td>category</td><td>string</td><td>No</td><td>High-level classification</td></tr>
+        <tr><td>subcategory</td><td>string</td><td>No</td><td>Subcategory related to category</td></tr>
+        <tr><td>external_link</td><td>string</td><td>No</td><td>Reference to external source</td></tr>
+        <tr><td>created_date</td><td>datetime</td><td>No</td><td>Creation timestamp</td></tr>
+        <tr><td>modified_date</td><td>datetime</td><td>No</td><td>Last modified timestamp</td></tr>
+        <tr><td>user</td><td>string</td><td>No</td><td>Username of the creator</td></tr>
+        <tr><td>average_rating</td><td>float</td><td>No</td><td>Average feedback rating</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Supported Actions</h2>
+    <ul>
+      <li><strong>GET</strong> — Retrieve insight details</li>
+      <li><strong>POST</strong> — Create a new insight</li>
+      <li><strong>PUT</strong> — Update existing insight (owner/admin)</li>
+      <li><strong>DELETE</strong> — Remove an insight (owner/admin)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Hypermedia Controls</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Control Name</th>
+          <th>Method</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>self</td><td>GET</td><td>Link to this insight resource</td></tr>
+        <tr><td>edit</td><td>PUT</td><td>Edit this insight</td></tr>
+        <tr><td>delete</td><td>DELETE</td><td>Delete this insight</td></tr>
+        <tr><td>profile</td><td>GET</td><td>Link to this profile document</td></tr>
+        <tr><td>geometa:insights-all</td><td>GET</td><td>Query all insights</td></tr>
+        <tr><td>geometa:insights-by</td><td>GET</td><td>Insights by a specific user</td></tr>
+        <tr><td>geometa:add-insight</td><td>POST</td><td>Create a new insight</td></tr>
+        <tr><td>geometa:insight-feedbackcollection</td><td>GET</td><td>Get feedback for this insight</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Example</h2>
+    <pre>{
+  "id": 123,
+  "title": "Nallikari Beach",
+  "description": "A white sandy beach with summer cafés and water sports equipment rentals.",
+  "longitude": 24.9354,
+  "latitude": 60.1699,
+  "category": "Sight",
+  "subcategory": "Beach",
+  "created_date": "2024-12-01T10:15:00Z",
+  "modified_date": "2024-12-05T14:50:00Z",
+  "image": "nallikari.jpg",
+  "address": "Leiritie 10, 90510 Oulu",
+  "external_link": "https://nallikari.fi",
+  "average_rating": 4.5,
+  "user": "Liisa"
+}</pre>
+  </section>
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Profile</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 900px; margin: auto; }
+    code { background-color: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    h1, h2 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background-color: #f0f0f0; }
+    pre { background-color: #f4f4f4; padding: 1rem; overflow-x: auto; }
+    section { margin-top: 2rem; }
+  </style>
+</head>
+<body>
+
+  <h1>User Resource Profile</h1>
+  <p>
+    This profile describes the <code>user</code> resource in the GeoData API. A user represents a registered account that can post insights and give feedback on others' content. This profile includes all supported attributes and hypermedia controls.
+  </p>
+
+  <section>
+    <h2>Attributes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>username</td><td>string</td><td>Yes</td><td>Unique user identifier</td></tr>
+        <tr><td>email</td><td>string</td><td>Yes</td><td>Email address</td></tr>
+        <tr><td>phone</td><td>number</td><td>No</td><td>Phone number</td></tr>
+        <tr><td>password</td><td>string</td><td>Yes</td><td>Password (write-only)</td></tr>
+        <tr><td>first_name</td><td>string</td><td>Yes</td><td>First name</td></tr>
+        <tr><td>last_name</td><td>string</td><td>No</td><td>Last name</td></tr>
+        <tr><td>status</td><td>enum</td><td>No</td><td>User status: ACTIVE, INACTIVE, BANNED</td></tr>
+        <tr><td>role</td><td>enum</td><td>No</td><td>User role: USER, ADMIN</td></tr>
+        <tr><td>profile_picture</td><td>string</td><td>No</td><td>Base64-encoded full image</td></tr>
+        <tr><td>profile_picture_thumb</td><td>string</td><td>No</td><td>Thumbnail image (auto-generated)</td></tr>
+        <tr><td>created_date</td><td>datetime</td><td>No</td><td>Account creation timestamp</td></tr>
+        <tr><td>modified_date</td><td>datetime</td><td>No</td><td>Last modification timestamp</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Supported Actions</h2>
+    <ul>
+      <li><strong>GET</strong> — Retrieve user information</li>
+      <li><strong>POST</strong> — Register a new user</li>
+      <li><strong>PUT</strong> — Update user information</li>
+      <li><strong>DELETE</strong> — Remove user account</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Hypermedia Controls</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Control Name</th>
+          <th>Method</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>self</td><td>GET</td><td>Link to this user resource</td></tr>
+        <tr><td>edit</td><td>PUT</td><td>Edit user data</td></tr>
+        <tr><td>delete</td><td>DELETE</td><td>Delete this user</td></tr>
+        <tr><td>profile</td><td>GET</td><td>Link to this profile document</td></tr>
+        <tr><td>geometa:insightcollection</td><td>GET</td><td>List of all insights</td></tr>
+        <tr><td>geometa:user-feedbackcollection</td><td>GET</td><td>Feedback submitted by the user</td></tr>
+        <tr><td>geometa:add-user</td><td>POST</td><td>Create a new user</td></tr>
+        <tr><td>geometa:usercollection</td><td>GET</td><td>(Admin only) List of all users</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Example</h2>
+    <pre>{
+  "username": "jane_doe",
+  "email": "jane@example.com",
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "role": "USER",
+  "status": "ACTIVE",
+  "profile_picture_thumb": "base64string..."
+}</pre>
+  </section>
+
+</body>
+</html>
