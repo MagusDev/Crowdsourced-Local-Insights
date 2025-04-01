@@ -188,26 +188,15 @@ class GeodataBuilder(MasonBuilder):
                 description="Query parameters: bbox=25.4,65.0,25.6,65.1 | ic=category | isc=subcategory"
             )
 
-    def add_control_feedbacks_all(self, user):
+    def add_control_users_all(self):
         """
-        Add a control to get all feedback
-        """
-        self.add_control(
-            "user:get-feedbacks",
-            url_for("api.feedbackcollectionbyuseritem", user=user),
-            method="GET",
-            title="Get all user related feedbacks"
-        )
-
-    def add_control_feedbacks_by(self, user):
-        """
-        Add a control to get all feedback
+        Add a control to get all users
         """
         self.add_control(
-            "user:get-feedbacks",
-            url_for("api.feedbackcollectionbyuseritem", user=user),
+            "user:get-users",
+            url_for("api.usercollection"),
             method="GET",
-            title="Get all user related feedbacks"
+            title="Get all users"
         )
 
     def add_control_add_user(self):
@@ -226,7 +215,7 @@ class GeodataBuilder(MasonBuilder):
         Add a control to add insight
         """
         if user:
-            href = url_for("api.insightcollectionbyuseritem", user=user.username)
+            href = url_for("api.insightcollection", user=user.username)
         else:
             href = url_for("api.insightcollection")
 
