@@ -3,8 +3,13 @@ This module define app models.
 """
 import enum
 import hashlib
+from flask import url_for
 import werkzeug.security
 from geodata import db
+from PIL import Image
+import io
+import base64
+import constants
 
 # Enum classes for status and role (ChatGPT used for implementing this ENUM functionality)
 class StatusEnum(enum.Enum):
@@ -33,7 +38,7 @@ class User(db.Model):
     username = db.Column(db.String(32), unique=True, nullable=False)
     email = db.Column(db.String(64), unique=True, nullable=False)
     phone = db.Column(db.Integer, unique=True, nullable=True)
-    password = db.Column(db.String(64), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
     first_name = db.Column(db.String(32), nullable=False)
     last_name = db.Column(db.String(32), nullable=True)
     created_date = db.Column(db.DateTime, default=db.func.now(), nullable=False)
@@ -43,13 +48,39 @@ class User(db.Model):
     role = db.Column(
         db.String, nullable=False, default="USER")  # Stored as string
     profile_picture = db.Column(
-        db.String, nullable=True, default='default_profile_picture_base64_here')
+        db.String, nullable=True)
+    profile_picture_thumb = db.Column(
+        db.String, nullable=True)
 
     # Relationship with Insight and Feedback
     insight = db.relationship("Insight", back_populates="user")
     feedback = db.relationship("Feedback", back_populates="user")
 
     api_key = db.relationship("ApiKey", back_populates="user", uselist=False)
+
+    def serialize(self, short_form=False):
+        data = {
+            "username": self.username,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "status": self.status,
+            "role": self.role,
+            "profile_picture_thumb": self.profile_picture_thumb
+        }
+
+        if short_form:
+            return data
+
+        # Full serialization
+        data.update({
+            "email": self.email,
+            "phone": self.phone,
+            "created_date": self.created_date.isoformat() if self.created_date else None,
+            "modified_date": self.modified_date.isoformat() if self.modified_date else None,
+            "profile_picture": self.profile_picture
+        })
+
+        return data
 
     def hash_password(self, password):
         """
@@ -98,6 +129,14 @@ class User(db.Model):
         if isinstance(role_enum, RoleEnum):
             self.role = role_enum.name
 
+    def is_admin(self):
+        return self.role_enum == RoleEnum.ADMIN
+
+    def is_owner_or_admin(self, other_user_id):
+        return self.id == other_user_id or self.is_admin()
+
+
+
     @staticmethod
     def get_schema():
         """
@@ -118,6 +157,17 @@ class User(db.Model):
         props["role"] = {"type": "string", "enum": ["USER", "ADMIN"]}
         props["profile_picture"] = {"type": "string"}
         return schema
+    
+    @staticmethod
+    def generate_thumbnail(image_data_base64, size=(64, 64)):
+        image_data = base64.b64decode(image_data_base64)
+        image = Image.open(io.BytesIO(image_data))
+        image.thumbnail(size)
+
+        buffer = io.BytesIO()
+        image.save(buffer, format="WEBP")  # tai PNG
+        thumb_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        return thumb_b64
 
 
 class Insight(db.Model):
@@ -151,6 +201,35 @@ class Insight(db.Model):
     address = db.Column(db.String(128))
     user = db.relationship('User', back_populates='insight', uselist=False)
     feedback = db.relationship("Feedback", back_populates="insight")
+
+    def serialize(self, short_form=False):
+        # Calculates average of ratings
+        ratings = [fb.rating for fb in self.feedback if fb.rating is not None]
+        average_rating = round(sum(ratings) / len(ratings), 1) if ratings else None
+
+        data = {
+            "id": self.id,
+            "title": self.title,
+            "longitude": self.longitude,
+            "latitude": self.latitude,
+            "category": self.category,
+            "created_date": self.created_date.isoformat(),
+            "user": self.user.username if self.user else None
+        }
+
+        if not short_form:
+            data.update({
+                "description": self.description,
+                "subcategory": self.subcategory,
+                "image": self.image,
+                "modified_date": self.modified_date.isoformat() if self.modified_date else None,
+                "external_link": self.external_link,
+                "address": self.address,
+                "average_rating": average_rating,
+            })
+
+        return data
+
     @staticmethod
     def get_schema():
         """
@@ -194,6 +273,18 @@ class Feedback(db.Model):
     user = db.relationship("User", back_populates="feedback", uselist=False)
     insight = db.relationship("Insight", back_populates="feedback")
 
+    def serialize(self):
+        return {
+            "@type": "feedback",
+            "id": self.id,
+            "rating": self.rating,
+            "comment": self.comment,
+            "user": self.user.username if self.user else None,
+            "insight": self.insight.id if self.insight else None,
+            "created_date": self.created_date.isoformat() if self.created_date else None,
+            "modified_date": self.modified_date.isoformat() if self.modified_date else None,
+        }
+
     @staticmethod
     def get_schema():
         """
@@ -209,7 +300,6 @@ class Feedback(db.Model):
 
 
 class ApiKey(db.Model):
-    
     
     key = db.Column(db.String(32), nullable=False, unique=True, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
