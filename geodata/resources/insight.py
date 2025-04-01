@@ -53,6 +53,7 @@ class InsightCollection(Resource):
 
             # 3. Construct the MASON-formatted response body
             body = self._build_insight_collection_response(insights, user)
+            body.add_control("up", url_for("api.useritem", user=user.id))
 
             return Response(json.dumps(body), 200, mimetype=MASON)
         else: 
@@ -165,11 +166,11 @@ class InsightItem(Resource):
         body.add_namespace("geometa", LINK_RELATIONS_URL)
         body.add_control("self", url_for("api.insightitem", insight=insight.id))
         body.add_control("profile", href=INSIGHT_PROFILE_URL)
-        body.add_control_insights_all()
-        body.add_control_insights_by(user)
+        body.add_control_insight_collection(user)
+        body.add_control_feedback_collection(user, authuser=None, insight=insight)
         body.add_control_edit_insight(auth_user, insight)
         body.add_control_delete_insight(auth_user, insight)
-        body.add_control_insight_collection(user)
+        body.add_control("author", url_for("api.useritem", user=insight.creator))
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
@@ -240,11 +241,10 @@ class InsightItem(Resource):
         body.add_namespace("geometa", INSIGHT_PROFILE_URL)
         body.add_control("self", url_for("api.insightitem", insight=insight.id))
         body.add_control("profile", href=INSIGHT_PROFILE_URL)
-        body.add_control_insights_all()
-        body.add_control_insights_by(user)
+        body.add_control_insight_collection(user)
+        body.add_control_feedback_collection(user, authuser=None, insight=insight)
         body.add_control_edit_insight(auth_user, insight)
         body.add_control_delete_insight(auth_user, insight)
-        body.add_control_insight_collection(user)
 
         response = Response(json.dumps(body), 200, mimetype=MASON)
         response.headers["Location"] = url_for("api.insightitem", insight=insight.id)
@@ -356,6 +356,7 @@ class InsightItem(Resource):
         body["@type"] = "insights"
         body.add_control("self", url_for("api.insightcollection"))
         body.add_control_add_insight()
+        body.add_control_users_all()
         if request.user and request.user.is_authenticated and user == request.user.username:
             body.add_control("up", url_for("api.useritem", user=user.username))
             body.add_control("author", url_for("api.useritem", user=user))

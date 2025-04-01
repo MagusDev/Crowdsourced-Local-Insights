@@ -18,6 +18,7 @@ from geodata.models import ApiKey
 
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
+
 class UserCollection(flask_restful.Resource):
     """Resource for handling user collection"""
 
@@ -34,6 +35,7 @@ class UserCollection(flask_restful.Resource):
         body["@type"] = "users"
         body.add_control("self", url_for("api.usercollection"))
         body.add_control_add_user()
+        body.add_control_insight_collection()
         body["items"] = []
         for user in User.query.all():
             item = user.serialize(short_form=True)
@@ -132,14 +134,12 @@ class UserItem(flask_restful.Resource):
         body.add_namespace("geometa", LINK_RELATIONS_URL)
         body.add_control("self", url_for("api.useritem", user=user.username))
         body.add_control("profile", href=USER_PROFILE_URL)
-        body.add_control_insights_all()
-        body.add_control_insights_by(user)
-        body.add_control_feedbacks_by(user)
+        body.add_control_insight_collection(user)
+        body.add_control_user_collection()
         if not short:
             body.add_control_delete_user()
             body.add_control_edit_user()
-        if current_user.role == "admin":
-            body.add_control_user_collection()
+            body.add_control_feedback_collection(user, authuser=current_user)            
         
         return Response(json.dumps(body), 200, mimetype=MASON)
 

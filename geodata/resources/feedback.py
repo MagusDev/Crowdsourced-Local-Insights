@@ -247,6 +247,7 @@ class FeedbackItem(Resource):
         body.add_control("self", self_url)
         body.add_control("up", up_url, title="Feedback list")
         body.add_control("profile", href=FEEDBACK_PROFILE_URL)
+        body.add_control("author", url_for("api.useritem", user=feedback.user_id))
         if feedback.user_id:
             body.add_control("author", url_for("api.useritem", user=feedback.user_id))
         return body
