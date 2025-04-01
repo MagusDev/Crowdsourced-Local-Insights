@@ -281,7 +281,7 @@ class InsightCollection(Resource):
         db.session.commit()
 
         response = Response(status=201)
-        response.headers["Location"] = url_for("api.insightitem", insight=new_insight.id)
+        response.headers["Location"] = url_for("api.insightitem", user=user.username, insight=new_insight.id)
 
         return response
 
@@ -356,7 +356,7 @@ class InsightCollection(Resource):
         body.add_control("self", url_for("api.insightcollection"))
         body.add_control_add_insight()
         if request.user and request.user.is_authenticated and user == request.user.username:
-            body.add_control_insights_by(user)
+            body.add_control("up", url_for("api.useritem", user=user.username))
             body.add_control("author", url_for("api.useritem", user=user))
         body["items"] = []
 
