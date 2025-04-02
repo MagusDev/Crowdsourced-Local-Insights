@@ -146,6 +146,90 @@ class InsightCollection(Resource):
         response.headers["Location"] = url_for("api.insightitem", user=user.username, insight=new_insight.id)
 
         return response
+    
+
+    def _parse_and_validate_params(self):
+        bbox = request.args.get("bbox")
+        username = request.args.get("usr")
+        category = request.args.get("ic")
+        subcategory = request.args.get("isc")
+
+        # At least bbox or username is required
+        if not bbox and not username:
+            return None, GeodataBuilder.create_error_response(
+                400,
+                "Missing bbox or username",
+                "Provide at least one of: bbox or usr"
+            )
+
+        # Try parsing the bbox if provided
+        try:
+            if bbox:
+                min_lon, min_lat, max_lon, max_lat = map(float, bbox.split(","))
+            else:
+                min_lon = min_lat = max_lon = max_lat = None
+        except ValueError:
+            return None, GeodataBuilder.create_error_response(
+                400,
+                "Invalid bbox format",
+                "Expected format: bbox=25.4,65.0,25.6,65.1"
+            )
+
+        return {
+            "bbox": (min_lon, min_lat, max_lon, max_lat) if bbox else None,
+            "username": username.lower() if username else None,
+            "category": category.lower() if category else None,
+            "subcategory": subcategory.lower() if subcategory else None
+        }, None
+    
+
+    def _fetch_insights(self, params):
+        query = Insight.query
+
+        # Filter by bounding box
+        if params["bbox"]:
+            min_lon, min_lat, max_lon, max_lat = params["bbox"]
+            query = query.filter(
+                Insight.longitude.between(min_lon, max_lon),
+                Insight.latitude.between(min_lat, max_lat)
+            )
+
+        # Filter by creator's username
+        if params["username"]:
+            query = query.join(User).filter(User.username == params["username"])
+
+        # Filter by category
+        if params["category"]:
+            query = query.filter(Insight.category == params["category"])
+
+        # Filter by subcategory
+        if params["subcategory"]:
+            query = query.filter(Insight.subcategory == params["subcategory"])
+
+        # Eager load the user relationship to avoid N+1 problem
+        query = query.options(joinedload(Insight.user))
+
+        return query.all()
+    
+
+    def _build_insight_collection_response(self, insights, user=None):
+        body = GeodataBuilder()
+        body["@type"] = "insights"
+        body.add_control("self", url_for("api.insightcollection"))
+        body.add_control_add_insight()
+        body.add_control_user_collection()
+        if request.user and request.user.is_authenticated and user == request.user.username:
+            body.add_control("up", url_for("api.useritem", user=user.username))
+        body["items"] = []
+
+        for i in insights:
+            item = GeodataBuilder(i.serialize(short_form=True))
+            item["@type"] = "insight"
+            item.add_control("self", url_for("api.insightitem", insight=i.id))
+            item.add_control("profile", href=INSIGHT_PROFILE_URL)
+            body["items"].append(item)
+
+        return body
 
 class InsightItem(Resource):
     """
@@ -285,88 +369,3 @@ class InsightItem(Resource):
 
         # 4. Return empty success response
         return Response(status=204)
-
-
-    def _parse_and_validate_params(self):
-        bbox = request.args.get("bbox")
-        username = request.args.get("usr")
-        category = request.args.get("ic")
-        subcategory = request.args.get("isc")
-
-        # At least bbox or username is required
-        if not bbox and not username:
-            return None, GeodataBuilder.create_error_response(
-                400,
-                "Missing bbox or username",
-                "Provide at least one of: bbox or usr"
-            )
-
-        # Try parsing the bbox if provided
-        try:
-            if bbox:
-                min_lon, min_lat, max_lon, max_lat = map(float, bbox.split(","))
-            else:
-                min_lon = min_lat = max_lon = max_lat = None
-        except ValueError:
-            return None, GeodataBuilder.create_error_response(
-                400,
-                "Invalid bbox format",
-                "Expected format: bbox=25.4,65.0,25.6,65.1"
-            )
-
-        return {
-            "bbox": (min_lon, min_lat, max_lon, max_lat) if bbox else None,
-            "username": username.lower() if username else None,
-            "category": category.lower() if category else None,
-            "subcategory": subcategory.lower() if subcategory else None
-        }, None
-    
-
-    def _fetch_insights(self, params):
-        query = Insight.query
-
-        # Filter by bounding box
-        if params["bbox"]:
-            min_lon, min_lat, max_lon, max_lat = params["bbox"]
-            query = query.filter(
-                Insight.longitude.between(min_lon, max_lon),
-                Insight.latitude.between(min_lat, max_lat)
-            )
-
-        # Filter by creator's username
-        if params["username"]:
-            query = query.join(User).filter(User.username == params["username"])
-
-        # Filter by category
-        if params["category"]:
-            query = query.filter(Insight.category == params["category"])
-
-        # Filter by subcategory
-        if params["subcategory"]:
-            query = query.filter(Insight.subcategory == params["subcategory"])
-
-        # Eager load the user relationship to avoid N+1 problem
-        query = query.options(joinedload(Insight.user))
-
-        return query.all()
-    
-
-    def _build_insight_collection_response(self, insights, user=None):
-        body = GeodataBuilder()
-        body["@type"] = "insights"
-        body.add_control("self", url_for("api.insightcollection"))
-        body.add_control_add_insight()
-        body.add_control_users_all()
-        if request.user and request.user.is_authenticated and user == request.user.username:
-            body.add_control("up", url_for("api.useritem", user=user.username))
-            body.add_control("author", url_for("api.useritem", user=user))
-        body["items"] = []
-
-        for i in insights:
-            item = GeodataBuilder(i.serialize(short_form=True))
-            item["@type"] = "insight"
-            item.add_control("self", url_for("api.insightitem", insight=i.id))
-            item.add_control("profile", href=INSIGHT_PROFILE_URL)
-            body["items"].append(item)
-
-        return body

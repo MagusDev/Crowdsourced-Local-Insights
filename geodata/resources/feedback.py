@@ -60,7 +60,7 @@ class FeedbackCollection(Resource):
 
     def post(self, user, insight):
         """
-        Create a new feedback for an insight and for user if logged in.
+        Create a new feedback for an insight and if logged in it will be added under user also.
         """
 
         if request.content_type != "application/json":
@@ -113,14 +113,9 @@ class FeedbackItem(Resource):
         - Adds Mason hypermedia controls including 'self', 'up', 'profile', and optionally 'author'.
         """
 
-        body = GeodataBuilder()
-
         current_user = get_authenticated_user()
 
-        self_url, up_url = self.generate_feedback_urls(user, feedback, current_user, insight, body)
-
-        # Build Mason response
-        self.prepare_feedback_response(feedback, up_url, self_url, body)
+        body = self.prepare_feedback_response(user, feedback, current_user, insight)
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
@@ -152,10 +147,6 @@ class FeedbackItem(Resource):
             return GeodataBuilder.create_error_response(400, f"Invalid input: {str(e)}")
         except Exception:
             return GeodataBuilder.create_error_response(400, "Malformed JSON or request body.")
-        
-        body = GeodataBuilder()
-
-        self_url, up_url = self.generate_feedback_urls(user, feedback, current_user, insight, body)
 
         feedback.rating = data.get("rating")
         feedback.comment = data.get("comment")
@@ -164,7 +155,7 @@ class FeedbackItem(Resource):
         cache.delete(request.path)
 
         # Build Mason response
-        self.prepare_feedback_response(feedback, up_url, self_url, body)
+        body = self.prepare_feedback_response(user, feedback, current_user, insight)
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
@@ -197,33 +188,38 @@ class FeedbackItem(Resource):
         return Response(status=204)
     
 
-    def generate_feedback_urls(self, user, feedback, current_user, insight=None, body=None):
+    def prepare_feedback_response(self, user, feedback, current_user, insight=None):
+        body = GeodataBuilder()
         if not insight:
             if not current_user or not current_user.is_owner_or_admin(user.id):
+                # self refers to insight's feedback
                 self_url = url_for(
                     "api.feedbackitem",
                     user=user.username,
                     insight=feedback.insight_id,
                     feedback=feedback.id
                 )
-                up_url = url_for(
+                # self refers to insight's feedbackcollection
+                collection_url = url_for(
                     "api.feedbackcollection",
                     user=user.username,
                     insight=feedback.insight_id
                 )
             else:
+                # self refers to user's feedback when owner/admin
                 self_url = url_for(
                     "api.feedbackitem",
                     user=user.username,
                     feedback=feedback.id
                 )
-                up_url = url_for(
+                # up refers to user's feedbackcollection when owner/admin
+                collection_url = url_for(
                     "api.feedbackcollection",
                     user=user.username
                 )
-                if body:
-                    body.add_control_delete_feedback(self_url)
-                    body.add_control_edit_feedback(self_url)
+                # controls for editing or deleting feedback when owner/admin
+                body.add_control_delete_feedback(self_url)
+                body.add_control_edit_feedback(self_url)
         else:
             self_url = url_for(
                 "api.feedbackitem",
@@ -231,25 +227,20 @@ class FeedbackItem(Resource):
                 insight=insight.id,
                 feedback=feedback.id
             )
-            up_url = url_for(
+            collection_url = url_for(
                 "api.feedbackcollection",
                 user=user.username,
                 insight=insight.id
             )
 
-        return self_url, up_url
-    
-
-    def prepare_feedback_response(feedback, self_url, up_url, body):
         body.update(feedback.serialize())
         body["@type"] = "feedback"
         body.add_namespace("geometa", LINK_RELATIONS_URL)
         body.add_control("self", self_url)
-        body.add_control("up", up_url, title="Feedback list")
+        body.add_control("collection", collection_url, title="Collection")
         body.add_control("profile", href=FEEDBACK_PROFILE_URL)
-        body.add_control("author", url_for("api.useritem", user=feedback.user_id))
+        body.add_control("up", url_for("api.insightitem", insight=feedback.insight_id))
         if feedback.user_id:
             body.add_control("author", url_for("api.useritem", user=feedback.user_id))
+        
         return body
-
-
