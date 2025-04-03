@@ -74,23 +74,23 @@ class UserCollection(flask_restful.Resource):
             first_name=data["first_name"],
             last_name=data.get("last_name", "")
         )
-        with db.session.begin():
-            db.session.add(new_user)
-        try:
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            return GeodataBuilder.create_error_response(409, "Database integrity error.")
 
         api_key_str = secrets.token_urlsafe(32)
-        api_key = ApiKey(
-            user_id=new_user.id,
-            key=ApiKey.key_hash(api_key_str),
-            admin=False,
-        )
-        with db.session.begin():
-            db.session.add(api_key)
+
         try:
+            # Add user to session
+            db.session.add(new_user)
+            db.session.flush()  # Flush to get the ID without committing
+            
+            # Create and add API key with the user ID
+            api_key = ApiKey(
+                user_id=new_user.id,
+                key=ApiKey.key_hash(api_key_str),
+                admin=False,
+            )
+            db.session.add(api_key)
+            
+            # Commit both in one transaction
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
@@ -103,10 +103,10 @@ class UserCollection(flask_restful.Resource):
         )
         body["@type"] = "user"
         body["api_key"] = api_key_str
-        body.add_control("self", url_for("api.useritem", user=new_user.username))
+        body.add_control("self", url_for("api.user", user=new_user.username))
         body.add_control_user_collection()
         response = Response(json.dumps(body), 201, mimetype=MASON)
-        response.headers["Location"] = url_for("api.useritem", user=new_user.username)
+        response.headers["Location"] = url_for("api.user", user=new_user.username)
         return response
 
 class UserItem(flask_restful.Resource):
@@ -132,7 +132,7 @@ class UserItem(flask_restful.Resource):
         body = GeodataBuilder(user.serialize(short_form=short))
         body["@type"] = "user"
         body.add_namespace("geometa", LINK_RELATIONS_URL)
-        body.add_control("self", url_for("api.useritem", user=user.username))
+        body.add_control("self", url_for("api.user", user=user.username))
         body.add_control("profile", href=USER_PROFILE_URL)
         body.add_control_insight_collection(user)
         body.add_control_user_collection()

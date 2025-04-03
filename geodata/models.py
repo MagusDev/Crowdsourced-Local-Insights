@@ -82,7 +82,8 @@ class User(db.Model):
 
         return data
 
-    def hash_password(self, password):
+    @staticmethod
+    def hash_password(password):
         """
         Hash the password using werkzeug.security.
         """
