@@ -167,7 +167,7 @@ class GeodataBuilder(MasonBuilder):
         """
         self.add_control(
             "geometa:insights-all",
-            url_for("api.insightcollection") + "{?bbox,usr,ic,isc}",
+            url_for("api.insights") + "{?bbox,usr,ic,isc}",
             isHrefTemplate=True,
             method="GET",
             title="Get all insights with optional filters",
@@ -182,7 +182,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control(
                 "geometa:insights-by",
-                url_for("api.insightcollection", user=user.username),
+                url_for("api.insights_by", user=user.username),
                 method="GET",
                 title="Get all user related insights with optional filters",
                 description="Query parameters: bbox=25.4,65.0,25.6,65.1 | ic=category | isc=subcategory"
@@ -195,7 +195,7 @@ class GeodataBuilder(MasonBuilder):
         self.add_control_post(
             "geometa:add-user",
             "Add a new user",
-            url_for("api.usercollection"),
+            url_for("api.users"),
             schema=User.get_schema()
         )
 
@@ -204,9 +204,9 @@ class GeodataBuilder(MasonBuilder):
         Add a control to add insight
         """
         if user:
-            href = url_for("api.insightcollection", user=user.username)
+            href = url_for("api.insights_by", user=user.username)
         else:
-            href = url_for("api.insightcollection")
+            href = url_for("api.insights")
 
         self.add_control_post(
             "geometa:add-insight",
@@ -222,7 +222,7 @@ class GeodataBuilder(MasonBuilder):
         self.add_control_post(
             "geometa:add-feedback",
             "Add a new feedback",
-            url_for("api.feedbackcollection", user=user.username, insight=insight.id),
+            url_for("api.feedbacks_by_insight", user=user.username, insight=insight.id),
             schema=Feedback.get_schema()
         )
 
@@ -232,7 +232,7 @@ class GeodataBuilder(MasonBuilder):
         """
         self.add_control_delete(
             "Delete this user", 
-            url_for("api.useritem", user=user.username)
+            url_for("api.user", user=user.username)
         )
 
     def add_control_delete_insight(self, user, insight):
@@ -242,7 +242,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control_delete(
                 "Delete this insight", 
-                url_for("api.insightitem", user=user.username, insight=insight.id)
+                url_for("api.insight_by", user=user.username, insight=insight.id)
             )
 
     def add_control_delete_feedback(self, fb_url):
@@ -260,7 +260,7 @@ class GeodataBuilder(MasonBuilder):
         """
         self.add_control_put(
             "Edit this user",
-            url_for("api.useritem", user=user.username),
+            url_for("api.user", user=user.username),
             schema=User.get_schema()
         )
     
@@ -271,7 +271,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control_put(
                 "Edit this insight",
-                url_for("api.insightitem", user=user.username, insight=insight.id),
+                url_for("api.insight_by", user=user.username, insight=insight.id),
                 schema=Insight.get_schema()
             )
 
@@ -295,7 +295,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control(
                 "geometa:insights-by",
-                url_for("api.insightcollection", user=user.username),
+                url_for("api.insights_by", user=user.username),
                 method="GET",
                 title="Get all user related insigths",
                 description="Fetches all insights created by the specified user. Optional query parameters: bbox, ic, isc"
@@ -303,7 +303,7 @@ class GeodataBuilder(MasonBuilder):
         else:
             self.add_control(
                 "geometa:insights-all",
-                url_for("api.insightcollection"),
+                url_for("api.insights"),
                 method="GET",
                 title="Get all insigths",
                 description="Fetches all insights. Optional query parameters: bbox, usr, ic, isc"
@@ -319,7 +319,7 @@ class GeodataBuilder(MasonBuilder):
         if user and authuser and user.username == authuser.username:
             self.add_control(
                 "geometa:user-feedbacks",
-                url_for("api.feedbackcollection", user=user.username),
+                url_for("api.feedbacks_by_user", user=user.username),
                 method="GET",
                 title="Get all feedbacks by user",
                 description="Fetches all feedbacks submitted by the authenticated user."
@@ -328,7 +328,7 @@ class GeodataBuilder(MasonBuilder):
         if user and insight:
             self.add_control(
                 "geometa:insight-feedbacks",
-                url_for("api.feedbackcollection", user=user.username, insight=insight.id),
+                url_for("api.feedbacks_by_insight", user=user.username, insight=insight.id),
                 method="GET",
                 title="Get all feedbacks for insight",
                 description="Fetches all feedbacks related to this specific insight."
@@ -340,7 +340,7 @@ class GeodataBuilder(MasonBuilder):
         """
         self.add_control(
             "geometa:users-all",
-            url_for("api.usercollection"),
+            url_for("api.users"),
             method="GET",
             title="Get all users",
             description="Fetches the list of all registered users."
@@ -367,7 +367,7 @@ class GeodataBuilder(MasonBuilder):
             # Suggest login for unauthorized requests
             builder.add_control(
                 "auth:login",
-                href=url_for("api.usercollection"),  # Could point to login endpoint
+                href=url_for("api.users"),  # Could point to login endpoint
                 method="POST",
                 encoding="json",
                 title="Authenticate with API key"
@@ -375,7 +375,7 @@ class GeodataBuilder(MasonBuilder):
 
         if status_code == 403:
             # Provide link back to main insights collection
-            builder.add_control("home", href=url_for("api.insightcollection"))
+            builder.add_control("home", href=url_for("api.insights"))
 
         if status_code == 400:
             # Suggest retrying the current action

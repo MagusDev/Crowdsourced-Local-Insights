@@ -33,14 +33,14 @@ class UserCollection(flask_restful.Resource):
         body = GeodataBuilder()
 
         body["@type"] = "users"
-        body.add_control("self", url_for("api.usercollection"))
+        body.add_control("self", url_for("api.users"))
         body.add_control_add_user()
         body.add_control_insight_collection()
         body["items"] = []
         for user in User.query.all():
-            item = user.serialize(short_form=True)
+            item = GeodataBuilder(user.serialize(short_form=True))
             item["@type"] = "user"
-            item.add_control("self", url_for("api.useritem", user=user.username))
+            item.add_control("self", url_for("api.user", user=user.username))
             item.add_control("profile", href=USER_PROFILE_URL)
             body["items"].append(item)
 
