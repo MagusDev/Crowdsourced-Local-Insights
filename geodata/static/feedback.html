@@ -49,9 +49,31 @@
     <h2>Supported Actions</h2>
     <ul>
       <li><strong>GET</strong> — Retrieve feedback details</li>
+        <div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          All details included.
+        </div>
       <li><strong>POST</strong> — Submit a new feedback</li>
+        <div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          <div style="margin-bottom: 0.3rem;">
+            <strong>Fields that can be added by user:</strong> rating and comment.
+          </div>
+          <div>
+            <strong>Fields that API will add automatically:</strong> id, user, insight, created_date and modified_date.
+          </div>
+        </div>
       <li><strong>PUT</strong> — Update your own feedback</li>
+      	<div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          <div style="margin-bottom: 0.3rem;">
+            <strong>Fields that can be mofified by user:</strong> rating and comment.
+          </div>
+          <div>
+            <strong>Fields that API will modify automatically:</strong> modified_date.
+          </div>
+        </div>
       <li><strong>DELETE</strong> — Delete your own feedback</li>
+      	<div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          All details will be deleted.
+        </div>
     </ul>
   </section>
 

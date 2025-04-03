@@ -56,12 +56,43 @@
   <section>
     <h2>Supported Actions</h2>
     <ul>
-      <li><strong>GET</strong> — Retrieve insight details</li>
-      <li><strong>POST</strong> — Create a new insight</li>
-      <li><strong>PUT</strong> — Update existing insight (owner/admin)</li>
-      <li><strong>DELETE</strong> — Remove an insight (owner/admin)</li>
+      <li>
+        <strong>GET</strong> — Retrieve insight details
+        <div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          All details included.
+        </div>
+      </li>
+      <li>
+        <strong>POST</strong> — Create a new insight
+        <div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          <div style="margin-bottom: 0.3rem;">
+            <strong>Fields that can be added by user:</strong> title, description, longitude, latitude, image, address, category, subcategory and external_link.
+          </div>
+          <div>
+            <strong>Fields that API will add automatically:</strong> id, created_date, modified_date, user and average_rating.
+          </div>
+        </div>
+      </li>
+      <li>
+        <strong>PUT</strong> — Update existing insight (owner/admin)
+         <div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          <div style="margin-bottom: 0.3rem;">
+            <strong>Fields that can be modified by user:</strong> title, description, longitude, latitude, image, address, category, subcategory and external_link.
+          </div>
+          <div>
+            <strong>Fields that API will modify automatically:</strong> modified_date and average_rating.
+          </div>
+        </div>
+      </li>
+      <li>
+        <strong>DELETE</strong> — Remove an insight (owner/admin)
+        <div style="margin-left: 2rem; margin-top: 0.3rem; margin-bottom: 1rem;">
+          All details and related feedbacks will be deleted.
+        </div>
+      </li>
     </ul>
   </section>
+
 
   <section>
     <h2>Hypermedia Controls</h2>
@@ -81,7 +112,7 @@
         <tr><td>geometa:insights-all</td><td>GET</td><td>Query all insights</td></tr>
         <tr><td>geometa:insights-by</td><td>GET</td><td>Insights by a specific user</td></tr>
         <tr><td>geometa:add-insight</td><td>POST</td><td>Create a new insight</td></tr>
-        <tr><td>geometa:insight-feedbackcollection</td><td>GET</td><td>Get feedback for this insight</td></tr>
+        <tr><td>geometa:insight-feedbacks</td><td>GET</td><td>Get feedback for this insight</td></tr>
       </tbody>
     </table>
   </section>
