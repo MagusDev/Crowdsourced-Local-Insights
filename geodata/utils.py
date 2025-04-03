@@ -182,7 +182,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control(
                 "geometa:insights-by",
-                url_for("api.insights_by", user=user.username),
+                url_for("api.insights_by", user=user),
                 method="GET",
                 title="Get all user related insights with optional filters",
                 description="Query parameters: bbox=25.4,65.0,25.6,65.1 | ic=category | isc=subcategory"
@@ -204,7 +204,7 @@ class GeodataBuilder(MasonBuilder):
         Add a control to add insight
         """
         if user:
-            href = url_for("api.insights_by", user=user.username)
+            href = url_for("api.insights_by", user=user)
         else:
             href = url_for("api.insights")
 
@@ -222,7 +222,7 @@ class GeodataBuilder(MasonBuilder):
         self.add_control_post(
             "geometa:add-feedback",
             "Add a new feedback",
-            url_for("api.feedbacks_by_insight", user=user.username, insight=insight.id),
+            url_for("api.feedbacks_by_insight", user=user, insight=insight),
             schema=Feedback.get_schema()
         )
 
@@ -232,7 +232,7 @@ class GeodataBuilder(MasonBuilder):
         """
         self.add_control_delete(
             "Delete this user", 
-            url_for("api.user", user=user.username)
+            url_for("api.user", user=user)
         )
 
     def add_control_delete_insight(self, user, insight):
@@ -242,7 +242,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control_delete(
                 "Delete this insight", 
-                url_for("api.insight_by", user=user.username, insight=insight.id)
+                url_for("api.insight_by", user=user.username, insight=insight)
             )
 
     def add_control_delete_feedback(self, fb_url):
@@ -260,7 +260,7 @@ class GeodataBuilder(MasonBuilder):
         """
         self.add_control_put(
             "Edit this user",
-            url_for("api.user", user=user.username),
+            url_for("api.user", user=user),
             schema=User.get_schema()
         )
     
@@ -271,7 +271,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control_put(
                 "Edit this insight",
-                url_for("api.insight_by", user=user.username, insight=insight.id),
+                url_for("api.insight_by", user=user, insight=insight),
                 schema=Insight.get_schema()
             )
 
@@ -295,7 +295,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control(
                 "geometa:insights-by",
-                url_for("api.insights_by", user=user.username),
+                url_for("api.insights_by", user=user),
                 method="GET",
                 title="Get all user related insigths",
                 description="Fetches all insights created by the specified user. Optional query parameters: bbox, ic, isc"
@@ -319,7 +319,7 @@ class GeodataBuilder(MasonBuilder):
         if user and authuser and user.username == authuser.username:
             self.add_control(
                 "geometa:user-feedbacks",
-                url_for("api.feedbacks_by_user", user=user.username),
+                url_for("api.feedbacks_by_user", user=user),
                 method="GET",
                 title="Get all feedbacks by user",
                 description="Fetches all feedbacks submitted by the authenticated user."
@@ -328,7 +328,7 @@ class GeodataBuilder(MasonBuilder):
         if user and insight:
             self.add_control(
                 "geometa:insight-feedbacks",
-                url_for("api.feedbacks_by_insight", user=user.username, insight=insight.id),
+                url_for("api.feedbacks_by_insight", user=user, insight=insight),
                 method="GET",
                 title="Get all feedbacks for insight",
                 description="Fetches all feedbacks related to this specific insight."

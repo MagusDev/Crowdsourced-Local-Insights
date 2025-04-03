@@ -40,7 +40,7 @@ class UserCollection(flask_restful.Resource):
         for user in User.query.all():
             item = GeodataBuilder(user.serialize(short_form=True))
             item["@type"] = "user"
-            item.add_control("self", url_for("api.user", user=user.username))
+            item.add_control("self", url_for("api.user", user=user))
             item.add_control("profile", href=USER_PROFILE_URL)
             body["items"].append(item)
 
@@ -103,10 +103,10 @@ class UserCollection(flask_restful.Resource):
         )
         body["@type"] = "user"
         body["api_key"] = api_key_str
-        body.add_control("self", url_for("api.user", user=new_user.username))
+        body.add_control("self", url_for("api.user", user=new_user))
         body.add_control_user_collection()
         response = Response(json.dumps(body), 201, mimetype=MASON)
-        response.headers["Location"] = url_for("api.user", user=new_user.username)
+        response.headers["Location"] = url_for("api.user", user=new_user)
         return response
 
 class UserItem(flask_restful.Resource):
@@ -132,7 +132,7 @@ class UserItem(flask_restful.Resource):
         body = GeodataBuilder(user.serialize(short_form=short))
         body["@type"] = "user"
         body.add_namespace("geometa", LINK_RELATIONS_URL)
-        body.add_control("self", url_for("api.user", user=user.username))
+        body.add_control("self", url_for("api.user", user=user))
         body.add_control("profile", href=USER_PROFILE_URL)
         body.add_control_insight_collection(user)
         body.add_control_user_collection()
@@ -213,11 +213,11 @@ class UserItem(flask_restful.Resource):
         body = GeodataBuilder(user.serialize())
         body["@type"] = "user"
         body.add_namespace("geometa", LINK_RELATIONS_URL)
-        body.add_control("self", url_for("api.useritem", user=user.username))
-        body.add_control_edit_user()
-        body.add_control_delete_user()
+        body.add_control("self", url_for("api.user", user=user))
+        body.add_control_edit_user(user)
+        body.add_control_delete_user(user)
 
-        return Response(json.dumps(body), 200, mimetype=MASON)
+        return Response(json.dumps(body), 204, mimetype=MASON)
     
 
     @require_user_auth

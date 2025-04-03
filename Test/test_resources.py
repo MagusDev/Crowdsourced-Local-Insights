@@ -163,7 +163,7 @@ def get_api_key_header(client):
     assert response.status_code == 201
     api_key = response.get_json()["api_key"]
     return {
-        "Geodata-Api-Key": api_key,
+        "Authorization": f"Bearer {api_key}",  # Changed from "Geodata-Api-Key"
         "user": user_data["username"]
     }
 
@@ -234,7 +234,7 @@ class TestUserItem():
         api_key_info = get_api_key_header(client)
         username = api_key_info["user"]
         resource_url = f"/api/users/{username}/"
-        headers = {"Geodata-Api-Key": api_key_info["Geodata-Api-Key"]}
+        headers = {"Authorization": api_key_info["Authorization"]}
         valid_user = get_user_json(3)
         valid_user["username"] = username
         valid_user["status"] = "ACTIVE"
@@ -258,7 +258,7 @@ class TestUserItem():
         response = client.put(resource_url, headers=headers, json=valid_user)
         assert response.status_code == 204
 
-        invalid_headers = {"Geodata-Api-Key": "invalid_key"}
+        invalid_headers = {"Authorization": "Bearer invalid_key"}
         response = client.put(resource_url, headers=invalid_headers, json=valid_user)
         assert response.status_code == 403
 
@@ -275,7 +275,7 @@ class TestUserItem():
         api_key_info = get_api_key_header(client)
         username = api_key_info["user"]
         resource_url = f"/api/users/{username}/"
-        headers = {"Geodata-Api-Key": api_key_info["Geodata-Api-Key"]}
+        headers = {"Authorization": api_key_info["Authorization"]}
 
         response = client.delete(resource_url)
         assert response.status_code == 403
@@ -283,7 +283,7 @@ class TestUserItem():
         response = client.delete(self.INVALID_URL, headers=headers)
         assert response.status_code == 404
 
-        invalid_headers = {"Geodata-Api-Key": "invalid_key"}
+        invalid_headers = {"Authorization": "Bearer invalid_key"}
         response = client.delete(resource_url, headers=invalid_headers)
         assert response.status_code == 403
 
