@@ -9,7 +9,7 @@ from geodata import db
 from PIL import Image
 import io
 import base64
-import constants
+import geodata.constants
 
 # Enum classes for status and role (ChatGPT used for implementing this ENUM functionality)
 class StatusEnum(enum.Enum):

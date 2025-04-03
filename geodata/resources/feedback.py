@@ -9,7 +9,7 @@ from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 from geodata.models import Feedback, db
 from geodata.utils import GeodataBuilder
 from geodata.auth import get_authenticated_user
-from constants import *
+from geodata.constants import *
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 from geodata import cache
 

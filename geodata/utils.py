@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from werkzeug.exceptions import NotFound
 from werkzeug.routing import BaseConverter
 from flask import request, Response, url_for
-from constants import *
+from geodata.constants import *
 
 from geodata.models import User, Insight, Feedback
 

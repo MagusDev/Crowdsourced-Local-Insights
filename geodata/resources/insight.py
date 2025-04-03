@@ -9,7 +9,7 @@ from werkzeug.exceptions import UnsupportedMediaType, BadRequest
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from jsonschema import validate, ValidationError, Draft7Validator
-from constants import *
+from geodata.constants import *
 from geodata import db
 from geodata.auth import require_admin, require_user_auth, get_authenticated_user
 from geodata.constants import MASON

@@ -176,3 +176,4 @@ cython_debug/
 
 .idea
 .vscode/settings.json
+db/geodata.db

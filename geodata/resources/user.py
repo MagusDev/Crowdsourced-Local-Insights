@@ -12,7 +12,7 @@ from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
 from geodata.models import *
 from geodata.auth import require_admin, require_user_auth, get_authenticated_user
 from geodata.utils import GeodataBuilder
-from constants import *
+from geodata.constants import *
 import secrets
 from geodata.models import ApiKey
 
