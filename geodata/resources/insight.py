@@ -41,36 +41,23 @@ class InsightCollection(Resource):
         Returns a MASON-formatted collection of insights with basic information
         and hypermedia controls for navigation and interaction.
         """
+        params, error_response = self._parse_and_validate_params(user_path=(user is not None))
+        if error_response:
+            return error_response
+        
         if user:
-            # 1. Fetch and validate query parameters
-            params, error_response = self._parse_and_validate_params()
-            if error_response:
-                return error_response
-            
-            # 2. Build and execute the query with given username in the path
-            params["username"] = user
-            insights = self._fetch_insights(params)
+            params["username"] = user.username
+        
+        insights = self._fetch_insights(params)
 
-            # 3. Construct the MASON-formatted response body
-            body = self._build_insight_collection_response(insights, user)
-            body.add_control("up", url_for("api.useritem", user=user.id))
+        body = self._build_insight_collection_response(insights, user)
+        
+        if user:
+            body.add_control("up", url_for("api.user", user=user))
 
-            return Response(json.dumps(body), 200, mimetype=MASON)
-        else: 
-            # 1. Fetch and validate query parameters
-            params, error_response = self._parse_and_validate_params()
-            if error_response:
-                return error_response
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
-            # 2. Build and execute the query with given parameters
-            insights = self._fetch_insights(params)
-
-            # 3. Construct the MASON-formatted response body
-            body = self._build_insight_collection_response(insights)
-
-            return Response(json.dumps(body), 200, mimetype=MASON)
-
-
+  
     def post(self, user=None):
         """
         Create a new insight.
@@ -91,17 +78,16 @@ class InsightCollection(Resource):
 
         # Determine authenticated user via API key
         auth_user = get_authenticated_user()
-
         if user:
             # Auth required: user must be authenticated and match path user
             if not auth_user:
                 return GeodataBuilder.create_error_response(
-                    403,
+                    401,
                     "Authentication required",
                     "You must authenticate to post as a user."
                 )
 
-            if auth_user.username != user:
+            if auth_user != user:
                 return GeodataBuilder.create_error_response(
                     403,
                     "Forbidden",
@@ -143,19 +129,24 @@ class InsightCollection(Resource):
         db.session.commit()
 
         response = Response(status=201)
-        response.headers["Location"] = url_for("api.insightitem", user=user.username, insight=new_insight.id)
+        if user:
+            # Use user-specific endpoint for user insights
+            response.headers["Location"] = url_for("api.insight_by", user=user, insight=new_insight)
+        else:
+            # Use general endpoint for anonymous insights
+            response.headers["Location"] = url_for("api.insight", insight=new_insight)
 
         return response
     
 
-    def _parse_and_validate_params(self):
+    def _parse_and_validate_params(self, user_path=False):
         bbox = request.args.get("bbox")
         username = request.args.get("usr")
         category = request.args.get("ic")
         subcategory = request.args.get("isc")
 
         # At least bbox or username is required
-        if not bbox and not username:
+        if not user_path and not bbox and not username:
             return None, GeodataBuilder.create_error_response(
                 400,
                 "Missing bbox or username",
@@ -175,11 +166,12 @@ class InsightCollection(Resource):
                 "Expected format: bbox=25.4,65.0,25.6,65.1"
             )
 
+        # Removed conversion to lower 
         return {
             "bbox": (min_lon, min_lat, max_lon, max_lat) if bbox else None,
-            "username": username.lower() if username else None,
-            "category": category.lower() if category else None,
-            "subcategory": subcategory.lower() if subcategory else None
+            "username": username if username else None,
+            "category": category if category else None,
+            "subcategory": subcategory if subcategory else None
         }, None
     
 
@@ -215,17 +207,18 @@ class InsightCollection(Resource):
     def _build_insight_collection_response(self, insights, user=None):
         body = GeodataBuilder()
         body["@type"] = "insights"
-        body.add_control("self", url_for("api.insightcollection"))
+        body.add_control("self", url_for("api.insights"))
         body.add_control_add_insight()
         body.add_control_user_collection()
-        if request.user and request.user.is_authenticated and user == request.user.username:
-            body.add_control("up", url_for("api.useritem", user=user.username))
+        auth_user = get_authenticated_user()
+        if user and auth_user and auth_user.username == user.username:
+            body.add_control("up", url_for("api.user", user=user))
         body["items"] = []
 
         for i in insights:
             item = GeodataBuilder(i.serialize(short_form=True))
             item["@type"] = "insight"
-            item.add_control("self", url_for("api.insightitem", insight=i.id))
+            item.add_control("self", url_for("api.insight", insight=i))
             item.add_control("profile", href=INSIGHT_PROFILE_URL)
             body["items"].append(item)
 
@@ -248,13 +241,14 @@ class InsightItem(Resource):
         body = GeodataBuilder(insight.serialize(short_form=False))
         body["@type"] = "insight"
         body.add_namespace("geometa", LINK_RELATIONS_URL)
-        body.add_control("self", url_for("api.insightitem", insight=insight.id))
+        body.add_control("self", url_for("api.insight", insight=insight))
         body.add_control("profile", href=INSIGHT_PROFILE_URL)
         body.add_control_insight_collection(user)
         body.add_control_feedback_collection(user, authuser=None, insight=insight)
         body.add_control_edit_insight(auth_user, insight)
         body.add_control_delete_insight(auth_user, insight)
-        body.add_control("author", url_for("api.useritem", user=insight.creator))
+        if user:
+            body.add_control("author", url_for("api.user", user=insight.user))
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
@@ -308,11 +302,11 @@ class InsightItem(Resource):
         insight.description = data["description"]
         insight.longitude = data["longitude"]
         insight.latitude = data["latitude"]
-        insight.image = data["image"]
-        insight.address = data["address"]
+        insight.image = data.get("image")
+        insight.address = data.get("address")
         insight.category = data["category"]
-        insight.subcategory = data["subcategory"]
-        insight.external_link = data["external_link"]
+        insight.subcategory = data.get("subcategory")
+        insight.external_link = data.get("external_link")
 
         db.session.commit()
 
@@ -323,7 +317,7 @@ class InsightItem(Resource):
         body = GeodataBuilder(insight.serialize(short_form=False))
         body["@type"] = "insight"
         body.add_namespace("geometa", INSIGHT_PROFILE_URL)
-        body.add_control("self", url_for("api.insightitem", insight=insight.id))
+        body.add_control("self", url_for("api.insight", insight=insight))
         body.add_control("profile", href=INSIGHT_PROFILE_URL)
         body.add_control_insight_collection(user)
         body.add_control_feedback_collection(user, authuser=None, insight=insight)
@@ -331,7 +325,7 @@ class InsightItem(Resource):
         body.add_control_delete_insight(auth_user, insight)
 
         response = Response(json.dumps(body), 200, mimetype=MASON)
-        response.headers["Location"] = url_for("api.insightitem", insight=insight.id)
+        response.headers["Location"] = url_for("api.insight", insight=insight)
         return response
 
 

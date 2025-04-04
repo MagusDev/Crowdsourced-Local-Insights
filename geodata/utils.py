@@ -199,7 +199,7 @@ class GeodataBuilder(MasonBuilder):
             schema=User.get_schema()
         )
 
-    def add_control_add_insight(self, user):
+    def add_control_add_insight(self, user=None):
         """
         Add a control to add insight
         """
@@ -242,7 +242,7 @@ class GeodataBuilder(MasonBuilder):
         if user:
             self.add_control_delete(
                 "Delete this insight", 
-                url_for("api.insight_by", user=user.username, insight=insight)
+                url_for("api.insight_by", user=user, insight=insight)
             )
 
     def add_control_delete_feedback(self, fb_url):

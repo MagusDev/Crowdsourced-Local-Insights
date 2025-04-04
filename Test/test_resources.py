@@ -2,11 +2,12 @@
 This module is used to prepare test resources.
 """
 import base64
+import random
 import tempfile
 import os
 import sys
 from datetime import datetime
-
+from urllib.parse import quote
 import pytest
 from geodata import db, create_app
 from geodata.models import User, Insight, Feedback
@@ -156,9 +157,9 @@ def get_user_json(number =1):
     }
 
 
-def get_api_key_header(client):
+def get_api_key_header(client, number=99):
     """Create a user and get API key header"""
-    user_data = get_user_json(99)  # Use a unique number
+    user_data = get_user_json(number)  # Use a unique number
     response = client.post("/api/users/", json=user_data)
     assert response.status_code == 201
     api_key = response.get_json()["api_key"]
@@ -402,120 +403,266 @@ class TestFeedbackItemByUserInsightItem():
         response = client.delete(self.RESOURCE_URL)
         assert response.status_code == 404
 
-class TestInsightItem():
-    """
-    Test for single insight with all the details
-    """
-    def test_get(self, client):
-        """
-        Test get insight detail with insight id
-        """
-        response = client.get("/api/insights/1/")
-        assert response.status_code == 200
+class TestInsightItem:
+    """Tests for the InsightItem resource (GET, PUT, DELETE)"""
+    RESOURCE_URL = "/api/insights/1/"
+    INVALID_URL = "/api/insights/100/"
 
-        response = client.get("/api/insights/100/")
+    def test_get(self, client):
+        """Test retrieving insight details - no auth required"""
+        # Valid insight
+        response = client.get(self.RESOURCE_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["@type"] == "insight"
+        assert "title" in body and "longitude" in body and "latitude" in body
+        
+        # Invalid insight
+        response = client.get(self.INVALID_URL)
         assert response.status_code == 404
 
-    def test_put(self, client):
-        """
-        Test update insight with insight id
-        """
+    def test_put_unauthorized(self, client):
+        """Test updating insight with unauthorized scenarios"""
         valid_insight = {
-            "title": "New Title",
-            "description": "New Description",
+            "title": "Updated Title",
+            "description": "Updated Description",
             "longitude": 25.473,
             "latitude": 65.012,
-            "image": "newimage.jpg",
-            "address": "123 Test Street, Oulu",
-            "category": "Food & Drink",
-            "subcategory": "Cafe",
-            "external_link": "http://example.com"
+            "category": "Food & Drink"
         }
+        
+        # No auth - should fail
+        response = client.put(self.RESOURCE_URL, json=valid_insight)
+        assert response.status_code == 401
+        
+        # Non-owner auth - should fail
+        api_key_info = get_api_key_header(client)
+        headers = {"Authorization": api_key_info["Authorization"]}
+        response = client.put(self.RESOURCE_URL, headers=headers, json=valid_insight)
+        assert response.status_code == 403
 
-        response = client.put("/api/insights/1/", data= "not json")
-        assert response.status_code in [400, 415]
-
-        response = client.put("/api/insights/100/", json=valid_insight)
-        assert response.status_code == 404
-
-        response = client.put("/api/insights/1/", json=valid_insight)
-        assert response.status_code == 204
-
-        valid_insight.pop("title")
-        response = client.put("/api/insights/1/", json=valid_insight)
+    def test_put_and_delete_own_insight(self, client):
+        """Test updating and deleting user's own insight"""
+        # 1. Create a new user
+        test_user = {
+            "username": "insightowner",
+            "email": "insightowner@example.com",
+            "password": "password123",
+            "first_name": "Insight",
+            "last_name": "Owner"
+        }
+        response = client.post("/api/users/", json=test_user)
+        assert response.status_code == 201
+        user_data = response.get_json()
+        user_key = user_data["api_key"]
+        headers = {"Authorization": f"Bearer {user_key}"}
+        
+        # 2. User creates their own insight
+        new_insight = {
+            "title": "Owner's Test Insight",
+            "description": "Created to test PUT and DELETE",
+            "longitude": 25.5,
+            "latitude": 65.0,
+            "category": "Test",
+            "subcategory": "Testing"
+        }
+        
+        response = client.post(f"/api/users/insightowner/insights/", 
+                              headers=headers, 
+                              json=new_insight)
+        assert response.status_code == 201
+        insight_url = response.headers["Location"]
+        
+        # 3. User updates their own insight
+        updated_insight = new_insight.copy()
+        updated_insight["title"] = "Updated Owner's Insight"
+        updated_insight["description"] = "Updated description"
+        
+        response = client.put(insight_url, headers=headers, json=updated_insight)
+        assert response.status_code == 200
+        
+        # 4. Verify update worked
+        response = client.get(insight_url)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["title"] == "Updated Owner's Insight"
+        assert body["description"] == "Updated description"
+        
+        # 5. Test invalid update formats
+        response = client.put(insight_url, headers=headers, data="not json")
+        assert response.status_code == 415
+        
+        invalid_insight = updated_insight.copy()
+        invalid_insight.pop("title")  # Remove required field
+        response = client.put(insight_url, headers=headers, json=invalid_insight)
         assert response.status_code == 400
-
-    def test_delete(self, client):
-        """
-        Test delete insight with insight id
-        """
-        response = client.delete("/api/insights/100/")
-        assert response.status_code == 404
-
-        response = client.delete("/api/insights/1/")
+        
+        # 6. User deletes their own insight
+        response = client.delete(insight_url, headers=headers)
         assert response.status_code == 204
-
-        response = client.delete("/api/insights/1/")
+        
+        # 7. Verify deletion worked
+        response = client.get(insight_url)
         assert response.status_code == 404
 
-class TestInsightCollectionByUserItem():
+    def test_delete_unauthorized(self, client):
+        """Test unauthorized delete scenarios"""
+        # No auth
+        response = client.delete(self.RESOURCE_URL)
+        assert response.status_code == 401
+        
+        # With auth but not owner
+        api_key_info = get_api_key_header(client)
+        headers = {"Authorization": api_key_info["Authorization"]}
+        
+        # User can't delete others' insights
+        response = client.delete(self.RESOURCE_URL, headers=headers)
+        assert response.status_code == 403
+
+class TestInsightCollection():
     """
-    Test for all the insights created by a user, a simple list without much detail
+    Test for insights collection with filtering capabilities
     """
-    def test_get(self, client):
+    
+    def test_get_with_filters(self, client):
         """
-        Test get insights created by a user
+        Test getting insights with various query filters
         """
-        response = client.get("/api/users/testuser1/insights/")
+        # Test with no filters (should return error since filters are required)
+        response = client.get("/api/insights/")
+        assert response.status_code == 400  # or 400 if you want to require filters
+        
+        # Test with bbox parameter
+        response = client.get("/api/insights/?bbox=25.4,65.0,25.5,65.1")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert "items" in body
+        assert len(body["items"]) > 0
+        
+        # Test with username parameter
+        response = client.get("/api/insights/?usr=testuser1")
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 2
-
-class TestAllInsights():
-    """
-    Test for insights to be displayed on the map. No need to be detailed
-    """
-    def test_get(self, client):
-        """
-        Test get all insights
-        """
-        response = client.get("/api/insights/")
+        
+        # Test with category filter
+        response = client.get("/api/insights/?usr=testuser1&ic=Food+%26+Drink")
         assert response.status_code == 200
         body = response.get_json()
-        assert len(body["items"]) == 3
+        assert len(body["items"]) == 1
+        assert body["items"][0]["category"] == "Food & Drink"
+        
+        # Test with subcategory filter
+        response = client.get("/api/insights/?bbox=0,0,90,90&ic=Infrastructure&isc=Parking")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 1
+        assert body["items"][0]["category"] == "Infrastructure"
+        
+        # Test with invalid bbox format
+        response = client.get("/api/insights/?bbox=invalid")
+        assert response.status_code == 400
+        
+        # Test with non-existent user
+        response = client.get("/api/insights/?usr=nonexistentuser")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 0
+        
+    def test_get_by_user_path(self, client):
+        """
+        Test getting insights via the user path
+        """
+        # Test getting insights by valid user
+        response = client.get("/api/users/testuser1/insights/")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 2  # testuser1 has 2 insights
+        
+        # Test getting insights by admin user
+        response = client.get("/api/users/admin/insights/")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 0  # admin has no insights
+        
+        # Test getting insights by invalid user
+        response = client.get("/api/users/nonexistentuser/insights/")
+        assert response.status_code == 404
+        
+        # Test with additional filters on user path
+        response = client.get("/api/users/testuser1/insights/?ic=Infrastructure")
+        assert response.status_code == 200
+        body = response.get_json()
+        assert len(body["items"]) == 1  # testuser1 has 1 Infrastructure insight
 
-class TestInsightItemByUserItem():
-    """
-    Test for single insight created by a user
-    """
+
     def test_post(self, client):
         """
-        Test create insight
+        Test creating insights through both anonymous and user-specific endpoints
         """
-        valid_insight = {
-            "title": "New Insight",
-            "description": "New Description",
+        # 1. Test anonymous insight creation (global endpoint)
+        anon_insight = {
+            "title": "Anonymous Insight",
+            "description": "Created without authentication",
+            "longitude": 25.5,
+            "latitude": 65.1,
+            "category": "Anonymous",
+            "subcategory": "Testing"
+        }
+        
+        response = client.post("/api/insights/", json=anon_insight)
+        # If anonymous posting is allowed:
+        assert response.status_code == 201
+        assert "Location" in response.headers
+        insight_url = response.headers["Location"]
+        # Verify the insight was created
+        response = client.get(insight_url)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["title"] == anon_insight["title"]
+        assert body["user"] is None  # Should be anonymous
+
+        
+        # 2. Test user-specific insight creation
+        api_key_info = get_api_key_header(client, number= 7)  
+        headers = {"Authorization": api_key_info["Authorization"]}
+        username = api_key_info["user"]
+        user_insight = {
+            "title": "User's Insight",
+            "description": "Created via user-specific endpoint",
             "longitude": 25.473,
             "latitude": 65.012,
-            "image": "newimage.jpg",
-            "address": "123 Test Street, Oulu",
-            "category": "Food & Drink",
-            "subcategory": "Cafe",
-            "external_link": "http://example.com"
+            "category": "Testing",
+            "subcategory": "API"
         }
-
-        response = client.post("/api/users/testuser1/insights/", data= "not json")
-        assert response.status_code in [400, 415]
-
-        response = client.post("/api/users/testuser1/insights/", json=valid_insight)
+        
+     
+        # Use the user-specific endpoint
+        response = client.post(f"/api/users/{username}/insights/", 
+                              headers=headers, 
+                              json=user_insight)
         assert response.status_code == 201
-        assert response.headers["Location"].endswith("/api/insights/4/")
-        response = client.get(response.headers["Location"])
+        assert "Location" in response.headers
+        insight_url = response.headers["Location"]
+        
+        # Verify the insight was created and attributed to the user
+        response = client.get(insight_url)
         assert response.status_code == 200
-
-        # response = client.post("/api/users/testuser1/insights/", json=valid_insight)
-        # assert response.status_code == 409
-
-        valid_insight.pop("title")
-        response = client.post("/api/users/testuser1/insights/", json=valid_insight)
+        body = response.get_json()
+        assert body["title"] == user_insight["title"]
+        assert body["user"] == username
+        
+        # 3. Test validation failures
+        # Missing required field
+        invalid_insight = user_insight.copy()
+        invalid_insight.pop("title")
+        response = client.post(f"/api/users/{username}/insights/", 
+                              headers=headers, 
+                              json=invalid_insight)
         assert response.status_code == 400
+        
+        # Invalid content type
+        response = client.post(f"/api/users/{username}/insights/", 
+                              headers=headers, 
+                              data="not json")
+        assert response.status_code in [400, 415]
