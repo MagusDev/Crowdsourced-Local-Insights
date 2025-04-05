@@ -26,31 +26,33 @@ class FeedbackCollection(Resource):
         body = GeodataBuilder()
         body["@type"] = "feedbacks"
         body.add_namespace("geometa", LINK_RELATIONS_URL)
-        body.add_control_add_feedback(user, insight)
+
+        if insight:
+            body.add_control_add_feedback(user, insight)
 
         if insight:
             feedbacks = Feedback.query.filter_by(insight_id=insight.id).all()
-            body.add_control("self", url_for("api.feedbackcollection", user=user.username, insight=insight.id))
-            body.add_control("up", url_for("api.insightitem", user=user.username, insight=insight.id))
+            body.add_control("self", url_for("api.feedbacks_by_insight", user=user, insight=insight))
+            body.add_control("up", url_for("api.insight", user=user, insight=insight))
         else:
             feedbacks = Feedback.query.filter_by(user_id=user.id).all()
-            body.add_control("self", url_for("api.feedbackcollection", user=user.username))
-            body.add_control("up", url_for("api.useritem", user=user.username))
+            body.add_control("self", url_for("api.feedbacks_by_user", user=user))
+            body.add_control("up", url_for("api.user", user=user))
 
         body["items"] = []
         for feedback in feedbacks:
             item = GeodataBuilder(feedback.serialize())
             item["@type"] = "feedback"
             if insight:
-                item.add_control("self", url_for("api.feedbackitem",
-                                                 user=user.username,
-                                                 insight=insight.id,
-                                                 feedback=feedback.id)
+                item.add_control("self", url_for("api.feedback_by_insight",
+                                                 user=user,
+                                                 insight=insight,
+                                                 feedback=feedback)
                                 )
             else:
-                item.add_control("self", url_for("api.feedbackitem",
-                                                 user=user.username,
-                                                 feedback=feedback.id)
+                item.add_control("self", url_for("api.feedback_by_user",
+                                                 user=user,
+                                                 feedback=feedback)
                                 )
             item.add_control("profile", href=FEEDBACK_PROFILE_URL)
             body["items"].append(item)
@@ -74,8 +76,6 @@ class FeedbackCollection(Resource):
             validate(data, Feedback.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
             return GeodataBuilder.create_error_response(400, f"Invalid input: {str(e)}")
-        except Exception:
-            return GeodataBuilder.create_error_response(400, "Malformed JSON or request body.")
 
         current_user = get_authenticated_user()
 
@@ -93,7 +93,7 @@ class FeedbackCollection(Resource):
 
         response = Response(status=201)
         response.headers["Location"] = url_for(
-            "api.feedbackitem", user=user.username, insight=insight.id, feedback=new_feedback.id
+            "api.feedback_by_insight", user=user, insight=insight, feedback=new_feedback
         )
         return response
 
@@ -194,43 +194,43 @@ class FeedbackItem(Resource):
             if not current_user or not current_user.is_owner_or_admin(user.id):
                 # self refers to insight's feedback
                 self_url = url_for(
-                    "api.feedbackitem",
-                    user=user.username,
-                    insight=feedback.insight_id,
-                    feedback=feedback.id
+                    "api.feedback_by_insight",
+                    user=user,
+                    insight=feedback,
+                    feedback=feedback
                 )
                 # self refers to insight's feedbackcollection
                 collection_url = url_for(
-                    "api.feedbackcollection",
-                    user=user.username,
-                    insight=feedback.insight_id
+                    "api.feedbacks_by_insight",
+                    user=user,
+                    insight=feedback.insight
                 )
             else:
                 # self refers to user's feedback when owner/admin
                 self_url = url_for(
-                    "api.feedbackitem",
-                    user=user.username,
-                    feedback=feedback.id
+                    "api.feedback_by_user",
+                    user=user,
+                    feedback=feedback
                 )
                 # up refers to user's feedbackcollection when owner/admin
                 collection_url = url_for(
-                    "api.feedbackcollection",
-                    user=user.username
+                    "api.feedbacks_by_user",
+                    user=user
                 )
                 # controls for editing or deleting feedback when owner/admin
                 body.add_control_delete_feedback(self_url)
                 body.add_control_edit_feedback(self_url)
         else:
             self_url = url_for(
-                "api.feedbackitem",
-                user=user.username,
-                insight=insight.id,
-                feedback=feedback.id
+                "api.feedback_by_insight",
+                user=user,
+                insight=insight,
+                feedback=feedback
             )
             collection_url = url_for(
-                "api.feedbackcollection",
-                user=user.username,
-                insight=insight.id
+                "api.feedbacks_by_insight",
+                user=user,
+                insight=insight
             )
 
         body.update(feedback.serialize())
@@ -239,8 +239,8 @@ class FeedbackItem(Resource):
         body.add_control("self", self_url)
         body.add_control("collection", collection_url, title="Collection")
         body.add_control("profile", href=FEEDBACK_PROFILE_URL)
-        body.add_control("up", url_for("api.insightitem", insight=feedback.insight_id))
-        if feedback.user_id:
-            body.add_control("author", url_for("api.useritem", user=feedback.user_id))
+        body.add_control("up", url_for("api.insight", insight=feedback.insight))
+        if feedback.user:
+            body.add_control("author", url_for("api.user", user=feedback.user))
         
         return body

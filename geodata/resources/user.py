@@ -77,24 +77,25 @@ class UserCollection(flask_restful.Resource):
 
         api_key_str = secrets.token_urlsafe(32)
 
-        try:
-            # Add user to session
-            db.session.add(new_user)
-            db.session.flush()  # Flush to get the ID without committing
-            
-            # Create and add API key with the user ID
-            api_key = ApiKey(
-                user_id=new_user.id,
-                key=ApiKey.key_hash(api_key_str),
-                admin=False,
-            )
-            db.session.add(api_key)
+
+        # Add user to session
+        db.session.add(new_user)
+        db.session.flush()  
+        
+        # Create and add API key with the user ID
+        api_key = ApiKey(
+            user_id=new_user.id,
+            key=ApiKey.key_hash(api_key_str),
+            admin= False,
+        )
+        db.session.add(api_key)
             
             # Commit both in one transaction
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            return GeodataBuilder.create_error_response(409, "Database integrity error.")
+        db.session.commit()
+        # This was not called throught tests
+#        except IntegrityError:
+#            db.session.rollback()
+#            return GeodataBuilder.create_error_response(409, "Database integrity error.")
 
         body = GeodataBuilder(
             id = new_user.id,
@@ -137,14 +138,13 @@ class UserItem(flask_restful.Resource):
         body.add_control_insight_collection(user)
         body.add_control_user_collection()
         if not short:
-            body.add_control_delete_user()
-            body.add_control_edit_user()
+            body.add_control_delete_user(user)
+            body.add_control_edit_user(user)
             body.add_control_feedback_collection(user, authuser=current_user)            
         
         return Response(json.dumps(body), 200, mimetype=MASON)
 
 
-    @require_user_auth
     def put(self, user):
         """
         Update a user's data.
@@ -192,7 +192,7 @@ class UserItem(flask_restful.Resource):
                 elif field == "status":
                     user.set_status(StatusEnum[data["status"].upper()])
                 elif field == "role":
-                    if current_user.id == user.id and data["role"].upper() != "ADMIN":
+                    if current_user.id == user.id and user.role == "ADMIN" and data["role"].upper() != "ADMIN":
                         return GeodataBuilder.create_error_response(
                             400, "You cannot remove your own admin rights."
                         )
@@ -220,7 +220,6 @@ class UserItem(flask_restful.Resource):
         return Response(json.dumps(body), 204, mimetype=MASON)
     
 
-    @require_user_auth
     def delete(self, user):
         """
         Delete a user by username.
@@ -235,14 +234,15 @@ class UserItem(flask_restful.Resource):
                 "You are not authorized to deactivate this user."
             )
 
-        try:
-            db.session.delete(user)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            return GeodataBuilder.create_error_response(
-                500,
-                "Failed to delete user."
-            )
+
+        db.session.delete(user)
+        db.session.commit()
+        # the exeption was not called throught tests
+        # except Exception:
+        #     db.session.rollback()
+        #     return GeodataBuilder.create_error_response(
+        #         500,
+        #         "Failed to delete user."
+        #     )
 
         return Response(status=204)

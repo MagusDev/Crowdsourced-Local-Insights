@@ -207,6 +207,7 @@ class TestUsersCollection():
         valid_user.pop("email")
         response = client.post(self.RESOURCE_URL, json=valid_user)
         assert response.status_code == 400
+    
 
 class TestUserItem():
     """
@@ -217,56 +218,181 @@ class TestUserItem():
 
     def test_get(self, client):
         """
-        Test get user
+        Test get user with different authentication scenarios
         """
+        # 1. Test basic anonymous access - should return public data only (short form)
         response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert body["username"] == "testuser1"
-
+        
+        # Verify only public fields are included
+        assert "email" not in body  # Email should be hidden in short form
+        
+        # Verify edit controls are not present for anonymous access
+        assert "geometa:edit-user" not in body["@controls"]
+        assert "geometa:delete-user" not in body["@controls"]
+        assert "geometa:user-feedbacks" not in body["@controls"]
+        
+        # Since we don't have login endpoint, we'll create a new user and access their profile
+        api_key_info = get_api_key_header(client, 50)
+        username = api_key_info["user"]
+        headers = {"Authorization": api_key_info["Authorization"]}
+        
+        # Access own profile
+        response = client.get(f"/api/users/{username}/", headers=headers)
+        assert response.status_code == 200
+        body = response.get_json()
+        
+        # Verify full data is returned
+        assert "email" in body  # Email should be visible to self
+        assert "status" in body  # Status should be visible to self
+        
+        # Verify edit/delete controls are present for self access
+        assert "edit" in body["@controls"]
+        assert "delete" in body["@controls"]
+        assert "geometa:user-feedbacks" in body["@controls"]
+        
+        # 4. Test access to non-existent user
         response = client.get(self.INVALID_URL)
         assert response.status_code == 404
+        
+        # 5. Test authenticated access as different user (non-admin) - should return public data only
+        response = client.get(self.RESOURCE_URL, headers=headers)  # Using previous non-admin user
+        assert response.status_code == 200
+        body = response.get_json()
+        
+        # Verify only public fields are included
+        assert "email" not in body  # Email should be hidden from other users
+        
+        # Verify edit controls are not present for other users
+        assert "edit" not in body["@controls"]
+        assert "delete" not in body["@controls"]
 
     def test_put(self, client):
         """
-        Test update user
+        Test update user - focused on actual implemented code paths
         """
-
+        # Setup - create a test user with API key
         api_key_info = get_api_key_header(client)
         username = api_key_info["user"]
         resource_url = f"/api/users/{username}/"
         headers = {"Authorization": api_key_info["Authorization"]}
-        valid_user = get_user_json(3)
-        valid_user["username"] = username
-        valid_user["status"] = "ACTIVE"
-        valid_user["role"] = "USER"
-
-        response = client.put(resource_url, headers = headers, data= "not json")
-        assert response.status_code in [400, 415]
-
-        response = client.put(self.INVALID_URL, headers = headers, json=valid_user)
-        assert response.status_code == 404
-
-
-        conflict_user = valid_user.copy()
-        conflict_user["username"] = "testuser2"
+        
+        # Valid update data
+        valid_update = {
+            "username": username,
+            "email": f"{username}@updated.com",
+            "password": "newpassword123",
+            "first_name": "Updated",
+            "last_name": "User",
+            "status": "ACTIVE",
+            "role": "USER"
+        }
+        
+        # 1. Test content type validation
+        response = client.put(resource_url, headers=headers, data="not json")
+        assert response.status_code == 415
+        
+        # 2. Test malformed JSON handling (lines 177-178)
         response = client.put(
             resource_url,
-            json=conflict_user,
-            headers= headers)
-        assert response.status_code == 409
-
-        response = client.put(resource_url, headers=headers, json=valid_user)
-        assert response.status_code == 204
-
-        invalid_headers = {"Authorization": "Bearer invalid_key"}
-        response = client.put(resource_url, headers=invalid_headers, json=valid_user)
+            headers=headers,
+            data="{bad json",
+            content_type="application/json"
+        )
+        assert response.status_code == 400
+        
+        # 3. Test non-existent user
+        response = client.put(self.INVALID_URL, headers=headers, json=valid_update)
+        assert response.status_code == 404
+        
+        # 4. Test unauthorized update (no auth)
+        response = client.put(resource_url, json=valid_update)
+        assert response.status_code == 403
+        
+        # 5. Test unauthorized update (wrong user)
+        other_user_info = get_api_key_header(client, 42)
+        wrong_headers = {"Authorization": other_user_info["Authorization"]}
+        response = client.put(resource_url, headers=wrong_headers, json=valid_update)
         assert response.status_code == 403
 
-        invalid_user = valid_user.copy()
-        invalid_user.pop("email")
-        response = client.put(resource_url, headers=headers, json=invalid_user)
+        # 7. Test database conflict handling (lines 195-199)
+        # Create a user with a username that will cause conflict
+        conflict_user = get_user_json(76)
+        response = client.post("/api/users/", json=conflict_user)
+        assert response.status_code == 201
+        
+        # Try to update original user to use conflict user's username
+        conflict_update = valid_update.copy()
+        conflict_update["username"] = conflict_user["username"]
+        response = client.put(resource_url, headers=headers, json=conflict_update)
+        assert response.status_code == 409
+        
+        # 8. Test successful update
+        response = client.put(resource_url, headers=headers, json=valid_update)
+        assert response.status_code == 204
+        
+        # Verify the update worked
+        response = client.get(resource_url)
+        body = response.get_json()
+        assert body["first_name"] == valid_update["first_name"]
+        assert body["last_name"] == valid_update["last_name"]
+
+
+    def test_admin_role_protection(self, client):
+        """Test that admins cannot remove their own admin rights"""
+        # 1. Create an admin user using the CLI command
+        from geodata.models import create_admin
+        app = client.application
+        
+        # Use the runner to invoke the command programmatically
+        runner = app.test_cli_runner()
+        result = runner.invoke(create_admin, ["admintest", "admintest@example.com", "adminpass123"])
+        assert "Admin created" in result.output
+        
+        # Parse the API key from the output
+        import re
+        api_key_match = re.search(r'API key: (\S+)', result.output)
+        admin_key = api_key_match.group(1)
+        
+        # Continue with your test...
+        admin_headers = {"Authorization": f"Bearer {admin_key}"}    
+        
+        # Now verify proper authentication works
+        response = client.get("/api/users/", headers=admin_headers)
+        assert response.status_code == 200
+        
+        # Verify user is authenticated as admin by checking their profile
+        response = client.get(f"/api/users/admintest/", headers=admin_headers)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body.get("role") == "ADMIN"
+        
+        # Fix: Check for edit control - it should be present for authenticated admin
+        assert "edit" in body["@controls"], f"Controls in response: {body['@controls']}"
+        
+        # Now test demotion prevention
+        demote_data = {
+            "username": "admintest",
+            "email": "admintest@example.com",
+            "password": "adminpass123",
+            "first_name": "Admin",
+            "last_name": "Test",
+            "role": "USER"  # Try to demote from ADMIN to USER
+        }
+        
+        response = client.put(
+            f"/api/users/admintest/",
+            headers=admin_headers,
+            json=demote_data
+        )
+        
+        # If we're successful, we should get a 400 error
         assert response.status_code == 400
+        body = response.get_json()
+        assert "cannot remove your own admin rights" in body["@error"]["@message"].lower()
+            
 
     def test_delete(self, client):
         """
@@ -308,7 +434,7 @@ class TestFeedbackCollectionByUserInsightItem():
         response = client.get(self.RESOURCE_URL)
         assert response.status_code == 200
         body = response.get_json()
-        assert len(body["items"]) == 1
+        assert len(body["items"]) == 2
 
         response = client.get(self.INVALID_URL)
         assert response.status_code == 404
@@ -349,59 +475,196 @@ class TestFeedbackCollectionByUserItem():
         body = response.get_json()
         assert len(body["items"]) == 1
 
-class TestFeedbackItemByUserInsightItem():
+class TestFeedbackItem:
     """
-    Test feedback item by user and insight
+    Test cases for the FeedbackItem resource (GET, PUT, DELETE methods)
+    with both user-specific and insight-specific paths
     """
-    RESOURCE_URL = "/api/users/testuser2/insights/1/feedbacks/1/"
-    INVALID_URL = "/api/users/testuser2/insights/1/feedbacks/100/"
+    # User-specific feedback path
+    USER_FB_URL = "/api/users/testuser1/feedbacks/2/"
+    INVALID_USER_FB_URL = "/api/users/testuser1/feedbacks/999/"
+    
+    # Insight-specific feedback path
+    INSIGHT_FB_URL = "/api/users/testuser2/insights/1/feedbacks/1/"
+    INVALID_INSIGHT_FB_URL = "/api/users/testuser2/insights/1/feedbacks/999/"
 
-    def test_get(self, client):
-        """
-              Test get feedback items by user insight
-        """
-        response = client.get(self.RESOURCE_URL)
+    def test_get_feedback(self, client):
+        """Test getting feedback via both user and insight paths"""
+        # 1. Get feedback via user path (should work)
+        response = client.get(self.USER_FB_URL)
         assert response.status_code == 200
-
-        response = client.get(self.INVALID_URL)
+        body = response.get_json()
+        assert body["@type"] == "feedback"
+        assert "rating" in body
+        assert "comment" in body
+        assert body["comment"] == "Nice park, good for relaxing"
+        
+        # 2. Get feedback via insight path (should work)
+        response = client.get(self.INSIGHT_FB_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["@type"] == "feedback"
+        assert "rating" in body
+        assert "comment" in body
+        assert body["comment"] == "Really useful insight! I found this place because of you."
+        
+        # 3. Test invalid feedback IDs
+        response = client.get(self.INVALID_USER_FB_URL)
+        assert response.status_code == 404
+        
+        response = client.get(self.INVALID_INSIGHT_FB_URL)
         assert response.status_code == 404
 
-    def test_put(self, client):
-        """
-        Test update feedback items by user insight
-        """
-        valid_feedback = {
-            "rating": 4,
-            "comment": "nice insight!"
+    def test_put_feedback_unauthorized(self, client):
+        """Test updating feedback without proper authorization"""
+        updated_feedback = {
+            "rating": 2,
+            "comment": "Changed my mind, not so good after all"
         }
-        response = client.put(self.RESOURCE_URL, data= "not json")
-        assert response.status_code in [400, 415]
+        
+        # 1. Test without authentication
+        response = client.put(self.USER_FB_URL, json=updated_feedback)
+        assert response.status_code == 403  # Forbidden
+        
+        response = client.put(self.INSIGHT_FB_URL, json=updated_feedback)
+        assert response.status_code == 403  # Forbidden
+        
+        # 2. Test with authentication but not the owner
+        api_key_info = get_api_key_header(client, 10)  # Different user
+        headers = {"Authorization": api_key_info["Authorization"]}
+        
+        response = client.put(self.USER_FB_URL, headers=headers, json=updated_feedback)
+        assert response.status_code == 403  # Forbidden
+        
+        response = client.put(self.INSIGHT_FB_URL, headers=headers, json=updated_feedback)
+        assert response.status_code == 403  # Forbidden
+        
+        # 3. Test invalid content type
+        response = client.put(self.USER_FB_URL, headers=headers, data="not json")
+        assert response.status_code in [403, 415]  # Either forbidden or unsupported media
 
-        response = client.put(self.INVALID_URL, json=valid_feedback)
-        assert response.status_code == 404
-
-        valid_feedback["rating"] = "nice"
-        response = client.put(self.RESOURCE_URL, json=valid_feedback)
+    def test_put_feedback_authorized(self, client):
+        """Test updating feedback with proper authorization"""
+        # 1. First, create a user and their feedback
+        test_user = {
+            "username": "fbowner",
+            "email": "fbowner@example.com",
+            "password": "password123",
+            "first_name": "Feedback",
+            "last_name": "Owner"
+        }
+        response = client.post("/api/users/", json=test_user)
+        assert response.status_code == 201
+        user_data = response.get_json()
+        user_key = user_data["api_key"]
+        headers = {"Authorization": f"Bearer {user_key}"}
+        
+        # 2. Post a new feedback
+        new_feedback = {
+            "rating": 5,
+            "comment": "Initial feedback to be updated"
+        }
+        insight_url = "/api/users/testuser1/insights/1/"  # Using existing insight
+        response = client.post(f"{insight_url}feedbacks/", headers=headers, json=new_feedback)
+        assert response.status_code == 201
+        feedback_url = response.headers["Location"]
+        
+        # 3. Update the feedback as the owner
+        updated_feedback = {
+            "rating": 3,
+            "comment": "Changed my rating after revisiting"
+        }
+        response = client.put(feedback_url, headers=headers, json=updated_feedback)
+        assert response.status_code == 200  # Should return the updated resource
+        
+        # 4. Verify the update worked
+        response = client.get(feedback_url)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["rating"] == 3
+        assert body["comment"] == "Changed my rating after revisiting"
+        
+        # 5. Test with invalid data
+        invalid_feedback = {"rating": "not-a-number", "comment": "Invalid rating"}
+        response = client.put(feedback_url, headers=headers, json=invalid_feedback)
         assert response.status_code == 400
 
-        valid_feedback["rating"] = 4
-        response = client.put(self.RESOURCE_URL, json=valid_feedback)
-        assert response.status_code == 204
+    def test_delete_feedback_unauthorized(self, client):
+        """Test deleting feedback without proper authorization"""
+        # 1. Test without authentication
+        response = client.delete(self.USER_FB_URL)
+        assert response.status_code == 403  # Forbidden
+        
+        response = client.delete(self.INSIGHT_FB_URL)
+        assert response.status_code == 403  # Forbidden
+        
+        # 2. Test with authentication but not the owner
+        api_key_info = get_api_key_header(client)
+        headers = {"Authorization": api_key_info["Authorization"]}
+        
+        response = client.delete(self.USER_FB_URL, headers=headers)
+        assert response.status_code == 403  # Forbidden
 
-
-
-    def test_delete(self, client):
-        """
-           Test delete feedback items by user insight.
-        """
-        response = client.delete(self.INVALID_URL)
+    def test_delete_feedback_authorized(self, client):
+        """Test deleting feedback with proper authorization"""
+        # 1. Create a user and their feedback
+        test_user = {
+            "username": "fbdeleter",
+            "email": "fbdeleter@example.com",
+            "password": "password123",
+            "first_name": "Feedback",
+            "last_name": "Deleter"
+        }
+        response = client.post("/api/users/", json=test_user)
+        assert response.status_code == 201
+        user_data = response.get_json()
+        user_key = user_data["api_key"]
+        headers = {"Authorization": f"Bearer {user_key}"}
+        
+        # 2. Post a new feedback
+        new_feedback = {
+            "rating": 4,
+            "comment": "Feedback that will be deleted"
+        }
+        insight_url = "/api/users/testuser1/insights/1/"
+        response = client.post(f"{insight_url}feedbacks/", headers=headers, json=new_feedback)
+        assert response.status_code == 201
+        feedback_url = response.headers["Location"]
+        
+        # 3. Delete the feedback as the owner
+        response = client.delete(feedback_url, headers=headers)
+        assert response.status_code == 204  # No content on successful deletion
+        
+        # 4. Verify the deletion worked
+        response = client.get(feedback_url)
         assert response.status_code == 404
-
-        response = client.delete(self.RESOURCE_URL)
-        assert response.status_code == 204
-
-        response = client.delete(self.RESOURCE_URL)
+        
+        # 5. Try to delete a non-existent feedback
+        response = client.delete(self.INVALID_USER_FB_URL, headers=headers)
         assert response.status_code == 404
+    
+    def test_prepare_feedback_response(self, client):
+        """Test the structure of feedback responses"""
+        # 1. Get feedback via user path
+        response = client.get(self.USER_FB_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        # Check Mason structure
+        assert "@type" in body
+        assert "@controls" in body
+        assert "self" in body["@controls"]
+        assert "profile" in body["@controls"]
+        
+        # 2. Get feedback via insight path - different controls
+        response = client.get(self.INSIGHT_FB_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        # Check Mason structure
+        assert "@type" in body
+        assert "@controls" in body
+        assert "self" in body["@controls"]
+        assert "profile" in body["@controls"]
+        assert "up" in body["@controls"]  # Should point to insight
 
 class TestInsightItem:
     """Tests for the InsightItem resource (GET, PUT, DELETE)"""

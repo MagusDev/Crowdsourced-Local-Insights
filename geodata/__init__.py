@@ -40,11 +40,14 @@ def create_app(test_config=None):
     from .utils import UserConverter, InsightConverter, FeedbackConverter
     from geodata.api_init import api_bp
     from . import api
+    from . import models
 
     app.url_map.converters["user"] = UserConverter
     app.url_map.converters["insight"] = InsightConverter
     app.url_map.converters["feedback"] = FeedbackConverter
     app.register_blueprint(api_bp)
+
+    app.cli.add_command(models.create_admin)
 
     @app.route("/profiles/<resource>/")
     def send_profile_html(resource):

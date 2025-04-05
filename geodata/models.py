@@ -3,6 +3,9 @@ This module define app models.
 """
 import enum
 import hashlib
+import secrets
+import click
+from flask.cli import with_appcontext
 from flask import url_for
 import werkzeug.security
 from geodata import db
@@ -311,3 +314,33 @@ class ApiKey(db.Model):
     @staticmethod
     def key_hash(key):
         return hashlib.sha256(key.encode()).digest()
+    
+
+@click.command("create-admin")
+@click.argument("username")
+@click.argument("email")
+@click.argument("password")
+def create_admin(username, email, password):
+    """Create an admin user from command line"""
+    user = User(
+        username=username,
+        email=email,
+        password=User.hash_password(password),
+        first_name="Admin",
+        last_name="User",
+    )
+    user.set_role(RoleEnum.ADMIN)
+    db.session.add(user)
+    db.session.flush()  # Flush to get the ID without committing
+    
+    # Create admin API key
+    api_key_str = secrets.token_urlsafe(32)
+    api_key = ApiKey(
+        user_id=user.id,  # Now user.id exists after the flush
+        key=ApiKey.key_hash(api_key_str),
+        admin=True,
+    )
+    db.session.add(api_key)
+    db.session.commit()
+    print(f"Admin created. API key: {api_key_str}")
+    return api_key_str  # Return the API key for testing purposes
