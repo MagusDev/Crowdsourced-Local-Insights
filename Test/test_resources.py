@@ -876,8 +876,7 @@ class TestInsightCollection():
         body = response.get_json()
         assert body["title"] == anon_insight["title"]
         assert body["user"] is None  
-
-        
+    
 
         api_key_info = get_api_key_header(client, number= 7)  
         headers = {"Authorization": api_key_info["Authorization"]}
@@ -890,7 +889,15 @@ class TestInsightCollection():
             "category": "Testing",
             "subcategory": "API"
         }
-        
+
+        response = client.post(f"/api/users/{username}/insights/",
+                        json=user_insight)
+        assert response.status_code == 401
+
+        response = client.post(f"/api/users/testuser1/insights/",
+                              headers=headers, 
+                              json=user_insight)
+        assert response.status_code == 403
      
 
         response = client.post(f"/api/users/{username}/insights/", 
