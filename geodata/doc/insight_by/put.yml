@@ -1,0 +1,34 @@
+parameters:
+- $ref: '#/components/parameters/user'
+- $ref: '#/components/parameters/insight'
+tags:
+  - insights
+description: Update insight by ID
+security:
+  - localInsightsApiKey: [ ]
+requestBody:
+  description: JSON data contain insight required fields
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/Insight'
+      example:
+        title: K City Market
+        description: K City Market
+        longitude: 12.345678
+        latitude: 34.567890
+        image: http://totally.not.placehold.er/
+        address: Oulu, Finland
+        category: Test category
+        subcategory: Test subcategory
+        external_link: http://totally.not.placehold.er/
+
+responses:
+  '200':
+    description: Insight updated successfully
+  '400':
+    description: Request body was not valid
+  '404':
+    description: Insight was not found
+  '415':
+    description: Wrong media type was used
