@@ -1,0 +1,109 @@
+tags:
+  - users
+description: Get all users
+responses:
+  '200':
+    content:
+      application/vnd.mason+json:
+        example:
+          '@controls':
+            geometa:add-user:
+              encoding: json
+              href: /api/users/
+              method: POST
+              schema:
+                properties:
+                  email:
+                    type: string
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  password:
+                    type: string
+                  phone:
+                    type: number
+                  profile_picture:
+                    type: string
+                  role:
+                    enum:
+                    - USER
+                    - ADMIN
+                    type: string
+                  status:
+                    enum:
+                    - ACTIVE
+                    - INACTIVE
+                    - BANNED
+                    type: string
+                  username:
+                    type: string
+                required:
+                - username
+                - email
+                - password
+                - first_name
+                type: object
+              title: Add a new user
+            geometa:insights-all:
+              description: 'Fetches all insights. Optional query parameters: bbox,
+                usr, ic, isc'
+              href: /api/insights/
+              method: GET
+              title: Get all insigths
+            self:
+              href: /api/users/
+          '@type': users
+          items:
+          - '@controls':
+              profile:
+                href: /profiles/user/
+              self:
+                href: /api/users/jane_doe/
+            '@type': user
+            first_name: Jane
+            last_name: Doe
+            profile_picture_thumb: null
+            role: USER
+            status: ACTIVE
+            username: jane_doe
+          - '@controls':
+              profile:
+                href: /profiles/user/
+              self:
+                href: /api/users/jane_Adrew/
+            '@type': user
+            first_name: Jane
+            last_name: Adrew
+            profile_picture_thumb: null
+            role: USER
+            status: ACTIVE
+            username: jane_Adrew
+          - '@controls':
+              profile:
+                href: /profiles/user/
+              self:
+                href: /api/users/jane_Admin/
+            '@type': user
+            first_name: Jane
+            last_name: Admin
+            profile_picture_thumb: null
+            role: USER
+            status: ACTIVE
+            username: jane_Admin
+          - '@controls':
+              profile:
+                href: /profiles/user/
+              self:
+                href: /api/users/jane2_doe/
+            '@type': user
+            first_name: Jane2
+            last_name: Doe
+            profile_picture_thumb: null
+            role: USER
+            status: ACTIVE
+            username: jane2_doe
+  '500':
+    description: Internal server error
+'500':
+  description: Internal server error

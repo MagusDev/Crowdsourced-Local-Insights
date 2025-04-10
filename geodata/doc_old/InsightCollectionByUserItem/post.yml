@@ -1,0 +1,36 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+tags:
+    - insights
+description: Create a new insight
+requestBody:
+    description: JSON data contain insight required fields
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Insight'
+        example:
+          creator: 12345
+          title: Insight 1
+          description: K City Market
+          longitude: 12.345678
+          latitude: 34.567890
+          image: http://totally.not.placehold.er/
+          address: Oulu, Finland
+          category: Test category
+          subcategory: Test subcategory
+          external_link: http://totally.not.placehold.er/
+
+responses:
+    '201':
+      description: Insight created successfully
+      headers:
+        Location:
+          description: URI of newly created insight
+          schema:
+            type: string
+
+    '415':
+      description: Request content type must be JSON
+    '400':
+      description: Incomplete request

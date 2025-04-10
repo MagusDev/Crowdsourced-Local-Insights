@@ -1,0 +1,38 @@
+tags:
+  - users
+description: Get user by username or email
+parameters:
+  - $ref: '#/components/parameters/user'
+responses:
+  '200':
+    content:
+      application/vnd.mason+json:
+        example:
+          '@controls':
+            geometa:insights-by:
+              description: 'Fetches all insights created by the specified user. Optional
+                query parameters: bbox, ic, isc'
+              href: /api/users/jane_doe/insights/
+              method: GET
+              title: Get all user related insigths
+            geometa:users-all:
+              description: Fetches the list of all registered users.
+              href: /api/users/
+              method: GET
+              title: Get all users
+            profile:
+              href: /profiles/user/
+            self:
+              href: /api/users/jane_doe/
+          '@namespaces':
+            geometa:
+              name: /geometa/link-relations#
+          '@type': user
+          first_name: Jane
+          last_name: Doe
+          profile_picture_thumb: null
+          role: USER
+          status: ACTIVE
+          username: jane_doe
+  '404':
+    description: User not found

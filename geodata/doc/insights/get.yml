@@ -1,0 +1,45 @@
+responses:
+  '200':
+    content:
+      application/vnd.mason+json:
+        example:
+          '@controls':
+            geometa:add-insight:
+              encoding: json
+              href: /api/insights/
+              method: POST
+              schema:
+                properties:
+                  address:
+                    type: string
+                  category:
+                    type: string
+                  description:
+                    type: string
+                  external_link:
+                    type: string
+                  image:
+                    type: string
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  subcategory:
+                    type: string
+                  title:
+                    type: string
+                required:
+                - title
+                - longitude
+                - latitude
+                type: object
+              title: Add a new insight
+            geometa:users-all:
+              description: Fetches the list of all registered users.
+              href: /api/users/
+              method: GET
+              title: Get all users
+            self:
+              href: /api/insights/
+          '@type': insights
+          items: []

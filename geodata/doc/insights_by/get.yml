@@ -1,0 +1,25 @@
+tags:
+  - insights
+description: All insights
+parameters:
+  - $ref: '#/components/parameters/user'
+responses:
+  '200':
+    description: Get list of insights
+    content:
+      application/json:
+        example:
+          - id: 1
+            title: Insight 1
+            description: Description of insight 1
+            longitude: 12.345678
+            latitude: 34.567890
+            category: Category of insight 1
+          - id: 2
+            title: Insight 2
+            description: Description of insight 2
+            longitude: 23.456789
+            latitude: 45.678901
+            category: Category of insight 2
+  '500':
+    description: Internal server error
