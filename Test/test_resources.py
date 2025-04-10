@@ -422,60 +422,111 @@ class TestUserItem():
         response = client.delete(resource_url, headers=headers)
         assert response.status_code == 404
 
-class TestFeedbackCollectionByUserInsightItem():
+class TestFeedbackCollection:
     """
-    Test feedback collection by user insight
+    Tests for feedback collections via both user and insight paths
     """
-    RESOURCE_URL = "/api/users/testuser2/insights/1/feedbacks/"
-    INVALID_URL = "/api/users/testuser2/insights/100/feedbacks/"
+    # URLs for testing different endpoints
+    USER_FB_URL = "/api/users/testuser2/feedbacks/"
+    INSIGHT_FB_URL = "/api/users/testuser2/insights/1/feedbacks/"
+    INVALID_INSIGHT_URL = "/api/users/testuser2/insights/100/feedbacks/"
+    INVALID_USER_URL = "/api/users/nonexistentuser/feedbacks/"
 
-    def test_get(self, client):
+    def test_get_by_user(self, client):
         """
-        Test get feedback collection by user insight
+        Test getting a user's feedback collection
         """
-        response = client.get(self.RESOURCE_URL)
+        response = client.get(self.USER_FB_URL)
         assert response.status_code == 200
         body = response.get_json()
-        assert len(body["items"]) == 2
+        assert "@type" in body and body["@type"] == "feedbacks"
+        assert "@controls" in body
+        assert "self" in body["@controls"]
+        assert "up" in body["@controls"]
+        assert "items" in body
+        assert len(body["items"]) == 1
+        
+        # Test invalid user path
+        response = client.get(self.INVALID_USER_URL)
+        assert response.status_code == 404
 
-        response = client.get(self.INVALID_URL)
+    def test_get_by_insight(self, client):
+        """
+        Test getting feedback collection for a specific insight
+        """
+        response = client.get(self.INSIGHT_FB_URL)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert "@type" in body and body["@type"] == "feedbacks"
+        assert "@controls" in body
+        assert "self" in body["@controls"]
+        assert "up" in body["@controls"]
+        assert "items" in body
+        assert len(body["items"]) == 2
+        
+        # Test controls for adding feedback (should be present in insight view)
+        assert "geometa:add-feedback" in body["@controls"]
+        
+        # Test invalid insight path
+        response = client.get(self.INVALID_INSIGHT_URL)
         assert response.status_code == 404
 
     def test_post(self, client):
         """
-        Test post feedback
+        Test creating feedback through insight path
         """
-        response = client.post(self.RESOURCE_URL, data= "not json")
-        assert response.status_code in [400, 415]
-
-        response = client.post(self.INVALID_URL, json={"rating": 5, "comment": "Great insight!"})
+        # 1. Test invalid content type
+        response = client.post(self.INSIGHT_FB_URL, data="not json")
+        assert response.status_code == 415
+        
+        # 2. Test non-existent insight
+        response = client.post(self.INVALID_INSIGHT_URL, json={"rating": 5, "comment": "Great insight!"})
         assert response.status_code == 404
-
-        response = client.post(self.RESOURCE_URL, json={"rating": 5, "comment": "Great insight!"})
+        
+        # 3. Test successful anonymous feedback creation
+        valid_feedback = {"rating": 5, "comment": "Great insight!"}
+        response = client.post(self.INSIGHT_FB_URL, json=valid_feedback)
         assert response.status_code == 201
-        assert response.headers["Location"] == "/api/users/testuser2/insights/1/feedbacks/4/"
-        response = client.get(response.headers["Location"])
-        assert response.status_code == 200
-
-        response = client.post(
-            self.RESOURCE_URL,
-            json={"rating": "nice", "comment": "Great insight!"}
-            )
-        assert response.status_code == 400
-
-class TestFeedbackCollectionByUserItem():
-    """
-    Test feedback collection by user
-    """
-    RESOURCE_URL = "/api/users/testuser2/feedbacks/"
-    def test_get(self, client):
-        """
-        Test get feedback collection
-        """
-        response = client.get(self.RESOURCE_URL)
+        assert "Location" in response.headers
+        location = response.headers["Location"]
+        
+        # Verify the feedback was created
+        response = client.get(location)
         assert response.status_code == 200
         body = response.get_json()
-        assert len(body["items"]) == 1
+        assert body["rating"] == 5
+        assert body["comment"] == "Great insight!"
+        
+        # 4. Test validation error handling
+        invalid_feedback = {"rating": "nice", "comment": "Great insight!"}
+        response = client.post(self.INSIGHT_FB_URL, json=invalid_feedback)
+        assert response.status_code == 400
+        body = response.get_json()
+        assert "@error" in body
+        assert "Invalid input" in body["@error"]["@message"]
+        
+        # 5. Test authenticated feedback creation
+        api_key_info = get_api_key_header(client)
+        headers = {"Authorization": api_key_info["Authorization"]}
+        username = api_key_info["user"]
+        user_feedback_url = f"/api/users/testuser2/insights/1/feedbacks/"
+        
+        auth_feedback = {
+            "rating": 4,
+            "comment": "Authenticated feedback test"
+        }
+        
+        response = client.post(user_feedback_url, headers=headers, json=auth_feedback)
+        assert response.status_code == 201
+        location = response.headers["Location"]
+        
+        # Verify authenticated feedback
+        response = client.get(location)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["rating"] == 4
+        assert "user" in body
+        assert body["user"] == username
 
 class TestFeedbackItem:
     """
@@ -660,6 +711,67 @@ class TestFeedbackItem:
         assert "self" in body["@controls"]
         assert "profile" in body["@controls"]
         assert "up" in body["@controls"] 
+    
+    def test_feedback_owner_controls(self, client):
+        """Test that feedback owners/admins get edit/delete controls"""
+        # 1. Create a test user
+        test_user = {
+            "username": "fbctrluser",
+            "email": "fbctrluser@example.com",
+            "password": "password123",
+            "first_name": "Control",
+            "last_name": "Tester"
+        }
+        response = client.post("/api/users/", json=test_user)
+        assert response.status_code == 201
+        user_data = response.get_json()
+        user_key = user_data["api_key"]
+        auth_headers = {"Authorization": f"Bearer {user_key}"}
+        
+        new_feedback = {
+            "rating": 4,
+            "comment": "Testing owner controls"
+        }
+        response = client.post(
+            "/api/users/testuser1/insights/1/feedbacks/", 
+            headers=auth_headers, 
+            json=new_feedback
+        )
+        assert response.status_code == 201
+        insight_feedback_url = response.headers["Location"]
+        
+        feedback_id = insight_feedback_url.split('/')[-2]
+        
+        user_feedback_url = f"/api/users/fbctrluser/feedbacks/{feedback_id}/"
+        
+        # 5. Access as owner - should have edit/delete controls
+        response = client.get(user_feedback_url, headers=auth_headers)
+        assert response.status_code == 200
+        body = response.get_json()
+        
+        assert "edit" in body["@controls"]
+        assert "delete" in body["@controls"] 
+        
+        assert "collection" in body["@controls"]
+        collection_link = body["@controls"]["collection"]["href"]
+        assert collection_link.endswith("/api/users/fbctrluser/feedbacks/")
+        
+        assert body["@controls"]["self"]["href"] == user_feedback_url
+        
+        from geodata.models import create_admin
+        app = client.application
+        runner = app.test_cli_runner()
+        result = runner.invoke(create_admin, ["adminctrl", "adminctrl@example.com", "adminpass"])
+        import re
+        api_key_match = re.search(r'API key: (\S+)', result.output)
+        admin_key = api_key_match.group(1)
+        admin_headers = {"Authorization": f"Bearer {admin_key}"}
+        
+        response = client.get(user_feedback_url, headers=admin_headers)
+        assert response.status_code == 200
+        body = response.get_json()
+        assert "edit" in body["@controls"]
+        assert "delete" in body["@controls"]
 
 class TestInsightItem:
     """Tests for the InsightItem resource (GET, PUT, DELETE)"""

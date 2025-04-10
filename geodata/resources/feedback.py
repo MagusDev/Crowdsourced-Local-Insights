@@ -145,8 +145,6 @@ class FeedbackItem(Resource):
             validate(data, Feedback.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
             return GeodataBuilder.create_error_response(400, f"Invalid input: {str(e)}")
-        except Exception:
-            return GeodataBuilder.create_error_response(400, "Malformed JSON or request body.")
 
         feedback.rating = data.get("rating")
         feedback.comment = data.get("comment")
@@ -174,16 +172,13 @@ class FeedbackItem(Resource):
                 "You are not authorized to delete this feedback."
             )
 
-        try:
-            db.session.delete(feedback)
-            db.session.commit()
-            cache.delete(request.path)
-        except Exception:
-            db.session.rollback()
-            return GeodataBuilder.create_error_response(
-                500,
-                "An error occurred while deleting the feedback."
-            )
+        # remoced the try except block for error 500
+        db.session.delete(feedback)
+        db.session.commit()
+        cache.delete(request.path)
+
+        db.session.rollback()
+
 
         return Response(status=204)
     
