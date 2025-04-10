@@ -3,6 +3,8 @@ parameters:
 tags:
     - insights
 description: Create a new insight
+security:
+  - localInsightsApiKey: [ ]
 requestBody:
     description: JSON data contain insight required fields
     content:

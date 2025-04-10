@@ -1,25 +1,80 @@
-tags:
-  - insights
-description: All insights
 parameters:
   - $ref: '#/components/parameters/user'
+tags:
+  - insights
+description: Get all insights of a specific user
 responses:
   '200':
-    description: Get list of insights
     content:
-      application/json:
+      application/vnd.mason+json:
         example:
-          - id: 1
-            title: Insight 1
-            description: Description of insight 1
-            longitude: 12.345678
-            latitude: 34.567890
-            category: Category of insight 1
-          - id: 2
-            title: Insight 2
-            description: Description of insight 2
-            longitude: 23.456789
-            latitude: 45.678901
-            category: Category of insight 2
+          '@controls':
+            geometa:add-insight:
+              encoding: json
+              href: /api/insights/
+              method: POST
+              schema:
+                properties:
+                  address:
+                    type: string
+                  category:
+                    type: string
+                  description:
+                    type: string
+                  external_link:
+                    type: string
+                  image:
+                    type: string
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  subcategory:
+                    type: string
+                  title:
+                    type: string
+                required:
+                - title
+                - longitude
+                - latitude
+                type: object
+              title: Add a new insight
+            geometa:users-all:
+              description: Fetches the list of all registered users.
+              href: /api/users/
+              method: GET
+              title: Get all users
+            self:
+              href: /api/insights/
+            up:
+              href: /api/users/test3/
+          '@type': insights
+          items:
+          - '@controls':
+              profile:
+                href: /profiles/insight/
+              self:
+                href: /api/insights/2/
+            '@type': insight
+            category: Sight
+            created_date: '2025-04-10T16:31:32.113893'
+            id: 2
+            latitude: 60.1699
+            longitude: 24.9354
+            title: Nallikari Beach second insight
+            user: test3
+          - '@controls':
+              profile:
+                href: /profiles/insight/
+              self:
+                href: /api/insights/3/
+            '@type': insight
+            category: Sight
+            created_date: '2025-04-10T16:31:32.113893'
+            id: 3
+            latitude: 60.1699
+            longitude: 24.9354
+            title: Nallikari Beach third insight
+            user: test3
   '500':
     description: Internal server error
