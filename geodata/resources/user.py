@@ -71,6 +71,7 @@ class UserCollection(flask_restful.Resource):
             username=data["username"],
             email=data["email"],
             password=User.hash_password(data["password"]),
+            phone=data["phone"],
             first_name=data["first_name"],
             last_name=data.get("last_name", "")
         )
