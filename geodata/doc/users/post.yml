@@ -1,0 +1,33 @@
+tags:
+  - users
+description: Create a new user
+requestBody:
+  description: JSON data contain user required fields
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/User'
+      example:
+        username: jane_doe
+        email: jane@example.com
+        password: a123456
+        first_name: Jane
+        last_name: Doe
+        role: USER
+        status: ACTIVE
+        profile_picture_thumb: base64string...
+
+responses:
+  '201':
+    description: User created successfully
+    headers:
+      Location:
+        description: URI of newly created user
+        schema:
+          type: string
+  '415':
+    description: Request content type must be JSON
+  '400':
+    description: Incomplete request
+  '409':
+    description: User name or email already exists

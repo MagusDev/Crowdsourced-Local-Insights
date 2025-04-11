@@ -1,0 +1,16 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+  - $ref: '#/components/parameters/insight'
+  - $ref: '#/components/parameters/feedback'
+
+tags:
+  - feedbacks
+description: Delete feedback by ID
+security:
+  - localInsightsApiKey: []
+
+responses:
+    '204':
+      description: Feedback deleted successfully
+    '404':
+      description: Feedback not found

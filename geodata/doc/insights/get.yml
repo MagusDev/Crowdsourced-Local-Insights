@@ -1,0 +1,81 @@
+tags:
+  - insights
+description: Insights filtered by query parameters
+parameters:
+  - $ref: '#/components/parameters/bbox'
+  - $ref: '#/components/parameters/usr'
+  - $ref: '#/components/parameters/ic'
+  - $ref: '#/components/parameters/isc'
+responses:
+  '200':
+    content:
+      application/vnd.mason+json:
+        example:
+          '@controls':
+            geometa:add-insight:
+              encoding: json
+              href: /api/insights/
+              method: POST
+              schema:
+                properties:
+                  address:
+                    type: string
+                  category:
+                    type: string
+                  description:
+                    type: string
+                  external_link:
+                    type: string
+                  image:
+                    type: string
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  subcategory:
+                    type: string
+                  title:
+                    type: string
+                required:
+                - title
+                - longitude
+                - latitude
+                type: object
+              title: Add a new insight
+            geometa:users-all:
+              description: Fetches the list of all registered users.
+              href: /api/users/
+              method: GET
+              title: Get all users
+            self:
+              href: /api/insights/
+          '@type': insights
+          items:
+          - '@controls':
+              profile:
+                href: /profiles/insight/
+              self:
+                href: /api/insights/2/
+            '@type': insight
+            category: Sight
+            created_date: '2025-04-10T16:31:32.113893'
+            id: 2
+            latitude: 60.1699
+            longitude: 24.9354
+            title: Nallikari Beach second insight
+            user: test3
+          - '@controls':
+              profile:
+                href: /profiles/insight/
+              self:
+                href: /api/insights/3/
+            '@type': insight
+            category: Sight
+            created_date: '2025-04-10T16:31:32.113893'
+            id: 3
+            latitude: 60.1699
+            longitude: 24.9354
+            title: Nallikari Beach third insight
+            user: test3
+  '500':
+    description: Internal server error

@@ -1,90 +1,90 @@
 openapi: 3.0.3
 components:
   schemas:
-      User:
-        properties:
-          username:
-            description: unique username
-            type: string
-          email:
-            description: email address
-            type: string
-          phone:
-            description: phone number
-            type: number
-          password:
-            description: password
-            type: string
-          first_name:
-            description: first name
-            type: string
-          last_name:
-            description: last name
-            type: string
-          status:
-            description: user status
-            type: string
-            enum:
-              - ACTIVE
-              - INACTIVE
-              - BANNED
-          role:
-            description: user role
-            type: string
-            enum:
-              - ADMIN
-              - USER
-          profile_picture:
-            description: profile picture
-            type: string
-        required:
-          - username
-          - email
-          - password
-          - first_name
+    User:
+      properties:
+        username:
+          description: unique username
+          type: string
+        email:
+          description: email address
+          type: string
+        phone:
+          description: phone number
+          type: number
+        password:
+          description: password
+          type: string
+        first_name:
+          description: first name
+          type: string
+        last_name:
+          description: last name
+          type: string
+        status:
+          description: user status
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+            - BANNED
+        role:
+          description: user role
+          type: string
+          enum:
+            - ADMIN
+            - USER
+        profile_picture:
+          description: profile picture
+          type: string
+      required:
+        - username
+        - email
+        - password
+        - first_name
 
-      Insight:
-        properties:
-          title:
-            description: title of the insight
-            type: string
-          description:
-            description: description of the insight
-            type: string
-          longitude:
-            description: longitude of the insight
-            type: number
-          latitude:
-            description: latitude of the insight
-            type: number
-          image:
-            description: image of the insight
-            type: string
-          address:
-            description: address of the insight
-            type: string
-          category:
-            description: category of the insight
-            type: string
-          subcategory:
-            description: subcategory of the insight
-            type: string
-          external_link:
-            description: external link of the insight
-            type: string
-        required:
-          - title
-          - longitude
-          - latitude
+    Insight:
+      properties:
+        title:
+          description: title of the insight
+          type: string
+        description:
+          description: description of the insight
+          type: string
+        longitude:
+          description: longitude of the insight
+          type: number
+        latitude:
+          description: latitude of the insight
+          type: number
+        image:
+          description: image of the insight
+          type: string
+        address:
+          description: address of the insight
+          type: string
+        category:
+          description: category of the insight
+          type: string
+        subcategory:
+          description: subcategory of the insight
+          type: string
+        external_link:
+          description: external link of the insight
+          type: string
+      required:
+        - title
+        - longitude
+        - latitude
 
-      Feedback:
-        properties:
-          rating:
-            description: rating of the feedback
-            type: number
-          comment:
-            description: comment of the feedback
-            type: string
+    Feedback:
+      properties:
+        rating:
+          description: rating of the feedback
+          type: number
+        comment:
+          description: comment of the feedback
+          type: string
   parameters:
     user:
       name: user
@@ -94,23 +94,54 @@ components:
       schema:
         type: string
     insight:
-        name: insight
-        in: path
-        description: ID of the insight
-        required: true
-        schema:
-            type: string
+      name: insight
+      in: path
+      description: ID of the insight
+      required: true
+      schema:
+        type: string
     feedback:
-        name: feedback
-        in: path
-        description: ID of the feedback
-        required: true
-        schema:
-            type: string
+      name: feedback
+      in: path
+      description: ID of the feedback
+      required: true
+      schema:
+        type: string
+    bbox:
+      name: bbox
+      in: query
+      required: false
+      description: Selected area on map. e.g. 25.4,65.0,25.6,65.1
+      schema:
+        type: string
+
+    usr:
+      name: usr
+      in: query
+      required: false
+      description: Username to filter insights
+      schema:
+        type: string
+
+    ic:
+      name: ic
+      in: query
+      required: false
+      description: Insight category
+      schema:
+        type: string
+
+    isc:
+      name: isc
+      in: query
+      required: false
+      description: Insight subcategory
+      schema:
+        type: string
   securitySchemes:
     localInsightsApiKey:
       type: apiKey
-      name: Geodata-Api-Key
+      name: Authorization
       in: header
 info:
   title: Crowd Sourced Local Insights API
@@ -124,5 +155,3 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-
-
