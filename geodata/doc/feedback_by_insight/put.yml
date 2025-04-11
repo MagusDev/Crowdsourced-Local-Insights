@@ -1,0 +1,29 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+  - $ref: '#/components/parameters/insight'
+  - $ref: '#/components/parameters/feedback'
+
+tags:
+  - feedbacks
+description: Update feedback by ID
+security:
+  - localInsightsApiKey: []
+requestBody:
+  description: JSON data contain feedback required fields
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/Feedback'
+      example:
+        rating: 5
+        comment: Great insight
+
+responses:
+  '204':
+    description: Feedback updated successfully
+  '400':
+    description: Request body was not valid
+  '404':
+    description: Feedback was not found
+  '415':
+    description: Wrong media type was used

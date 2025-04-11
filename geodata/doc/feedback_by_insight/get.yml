@@ -1,0 +1,39 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+  - $ref: '#/components/parameters/insight'
+  - $ref: '#/components/parameters/feedback'
+
+tags:
+  - feedbacks
+description: Get feedback by ID
+
+responses:
+  '200':
+    content:
+      application/vnd.mason+json:
+        example:
+          '@controls':
+            author:
+              href: /api/users/test5/
+            collection:
+              href: /api/users/test5/insights/6/feedbacks/
+              title: Collection
+            profile:
+              href: /profiles/feedback/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/1/
+            up:
+              href: /api/insights/6/
+          '@namespaces':
+            geometa:
+              name: /geometa/link-relations#
+          '@type': feedback
+          comment: Great insight!
+          created_date: '2025-04-11T02:33:52'
+          id: 1
+          insight: 6
+          modified_date: '2025-04-11T02:33:52'
+          rating: 5
+          user: test5
+  '404':
+    description: Feedback not found

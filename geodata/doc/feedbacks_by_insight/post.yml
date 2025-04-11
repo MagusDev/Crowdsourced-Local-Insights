@@ -24,41 +24,18 @@ responses:
         description: URI of newly created feedback
         schema:
           type: string
-        example: "/api/users/testuser2/insights/1/feedbacks/4/"
   "400":
     description: Incomplete request or invalid data
-    content:
-      application/vnd.mason+json:
-        example:
-          "@error":
-            "@message": Invalid input
-            "@messages":
-              - "rating must be an integer between 1 and 5"
+
   "401":
     description: Authentication required
-    content:
-      application/vnd.mason+json:
-        example:
-          "@error":
-            "@message": Authentication required
+
   "403":
     description: Not authorized to create feedback
-    content:
-      application/vnd.mason+json:
-        example:
-          "@error":
-            "@message": You are not authorized to modify this resource
+
   "404":
     description: User or insight not found
-    content:
-      application/vnd.mason+json:
-        example:
-          "@error":
-            "@message": Resource not found
+
   "415":
     description: Request content type must be JSON
-    content:
-      application/vnd.mason+json:
-        example:
-          "@error":
-            "@message": Unsupported media type
+

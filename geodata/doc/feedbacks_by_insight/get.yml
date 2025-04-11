@@ -1,0 +1,61 @@
+parameters:
+  - $ref: '#/components/parameters/user'
+  - $ref: '#/components/parameters/insight'
+tags:
+  - feedbacks
+description: Get all feedbacks of a specific insight
+responses:
+  '200':
+    content:
+      application/vnd.mason+json:
+        example:
+          '@controls':
+            geometa:add-feedback:
+              encoding: json
+              href: /api/users/test5/insights/6/feedbacks/
+              method: POST
+              schema:
+                properties:
+                  comment:
+                    type: string
+                  rating:
+                    type: number
+                type: object
+              title: Add a new feedback
+            self:
+              href: /api/users/test5/insights/6/feedbacks/
+            up:
+              href: /api/insights/6/?user=%3CUser+8%3E
+          '@namespaces':
+            geometa:
+              name: /geometa/link-relations#
+          '@type': feedbacks
+          items:
+          - '@controls':
+              profile:
+                href: /profiles/feedback/
+              self:
+                href: /api/users/test5/insights/6/feedbacks/1/
+            '@type': feedback
+            comment: Great insight!
+            created_date: '2025-04-11T02:33:52'
+            id: 1
+            insight: 6
+            modified_date: '2025-04-11T02:33:52'
+            rating: 5
+            user: test5
+          - '@controls':
+              profile:
+                href: /profiles/feedback/
+              self:
+                href: /api/users/test5/insights/6/feedbacks/2/
+            '@type': feedback
+            comment: Great insight second!
+            created_date: '2025-04-11T02:39:54'
+            id: 2
+            insight: 6
+            modified_date: '2025-04-11T02:39:54'
+            rating: 5
+            user: test5
+  '500':
+    description: Internal server error
