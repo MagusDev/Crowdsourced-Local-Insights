@@ -48,6 +48,8 @@ def create_app(test_config=None):
     app.register_blueprint(api_bp)
 
     app.cli.add_command(models.create_admin)
+    app.cli.add_command(models.init_db_command)
+    app.cli.add_command(models.populate_db_command)
 
     @app.route("/profiles/<resource>/")
     def send_profile_html(resource):

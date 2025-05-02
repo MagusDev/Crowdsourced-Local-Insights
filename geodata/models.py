@@ -314,7 +314,98 @@ class ApiKey(db.Model):
     @staticmethod
     def key_hash(key):
         return hashlib.sha256(key.encode()).digest()
+
+
+@click.command("init-db")
+@with_appcontext
+def init_db_command():
+    """Clear existing data and create new tables."""
+    click.echo("Initializing the database...")
+    #db.drop_all()
+    db.create_all()
+    click.echo("Database initialized successfully!")
+
+@click.command("populate-db")
+@with_appcontext
+def populate_db_command():
+    """Populate database with sample data."""
+    # Create sample users
+    admin = User(
+        username="admin_test",
+        email="admin@example.com",
+        password=User.hash_password("adminpass"),
+        first_name="Admin",
+        last_name="User",
+        phone=1234567890,
+        status="ACTIVE"
+    )
+    admin.set_role(RoleEnum.ADMIN)
     
+    user = User(
+        username="user_test",
+        email="user@example.com",
+        password=User.hash_password("userpass"),
+        first_name="Regular",
+        last_name="User",
+        phone=9876543210,
+        status="ACTIVE"
+    )
+    user.set_role(RoleEnum.USER)
+    
+    db.session.add_all([admin, user])
+    db.session.flush()
+    
+    # Create sample insights
+    insight1 = Insight(
+        title="Coffee Shop",
+        description="Great local coffee shop with free WiFi",
+        longitude=25.4667,
+        latitude=65.0167,
+        category="Food & Drink",
+        subcategory="Cafe",
+        address="123 Main St",
+        creator=user.id
+    )
+    
+    insight2 = Insight(
+        title="City Park",
+        description="Beautiful park with walking trails",
+        longitude=25.4700,
+        latitude=65.0200,
+        category="Recreation",
+        subcategory="Parks",
+        address="456 Park Ave",
+        creator=admin.id
+    )
+    
+    db.session.add_all([insight1, insight2])
+    db.session.flush()
+    
+    # Create sample feedback
+    feedback = Feedback(
+        user_id=user.id,
+        insight_id=insight2.id,
+        rating=5,
+        comment="This park is amazing! Perfect for picnics."
+    )
+    
+    db.session.add(feedback)
+    db.session.commit()
+    
+    # Create API key for admin
+    api_key_str = secrets.token_urlsafe(32)
+    api_key = ApiKey(
+        user_id=admin.id,
+        key=ApiKey.key_hash(api_key_str),
+        admin=True,
+    )
+    db.session.add(api_key)
+    db.session.commit()
+    
+    click.echo("Database populated with sample data!")
+    click.echo(f"Admin user created with username: admin_test, password: adminpass")
+    click.echo(f"Regular user created with username: user_test, password: userpass")
+    click.echo(f"Admin API key: {api_key_str}")
 
 @click.command("create-admin")
 @click.argument("username")
@@ -331,16 +422,16 @@ def create_admin(username, email, password):
     )
     user.set_role(RoleEnum.ADMIN)
     db.session.add(user)
-    db.session.flush()  # Flush to get the ID without committing
+    db.session.flush() 
     
     # Create admin API key
     api_key_str = secrets.token_urlsafe(32)
     api_key = ApiKey(
-        user_id=user.id,  # Now user.id exists after the flush
+        user_id=user.id,  
         key=ApiKey.key_hash(api_key_str),
         admin=True,
     )
     db.session.add(api_key)
     db.session.commit()
     print(f"Admin created. API key: {api_key_str}")
-    return api_key_str  # Return the API key for testing purposes
+    return api_key_str  
