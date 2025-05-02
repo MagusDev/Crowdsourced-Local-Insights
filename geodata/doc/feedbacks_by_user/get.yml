@@ -1,48 +1,46 @@
 parameters:
-  - $ref: '#/components/parameters/user'
+  - $ref: "#/components/parameters/user"
 tags:
   - feedbacks
 description: Get all feedbacks of a specific user
 responses:
-  '200':
+  "200":
     content:
       application/vnd.mason+json:
         example:
-          '@controls':
+          "@controls":
             self:
               href: /api/users/test5/feedbacks/
             up:
               href: /api/users/test5/
-          '@namespaces':
+          "@namespaces":
             geometa:
               name: /geometa/link-relations#
-          '@type': feedbacks
+          "@type": feedbacks
           items:
-          - '@controls':
-              profile:
-                href: /profiles/feedback/
-              self:
-                href: /api/users/test5/feedbacks/1/
-            '@type': feedback
-            comment: Great insight!
-            created_date: '2025-04-11T02:33:52'
-            id: 1
-            insight: 6
-            modified_date: '2025-04-11T02:33:52'
-            rating: 5
-            user: test5
-          - '@controls':
-              profile:
-                href: /profiles/feedback/
-              self:
-                href: /api/users/test5/feedbacks/2/
-            '@type': feedback
-            comment: Great insight second!
-            created_date: '2025-04-11T02:39:54'
-            id: 2
-            insight: 6
-            modified_date: '2025-04-11T02:39:54'
-            rating: 5
-            user: test5
-  '500':
-    description: Internal server error
+            - "@controls":
+                profile:
+                  href: /profiles/feedback/
+                self:
+                  href: /api/users/test5/feedbacks/1/
+              "@type": feedback
+              comment: Great insight!
+              created_date: "2025-04-11T02:33:52"
+              id: 1
+              insight: 6
+              modified_date: "2025-04-11T02:33:52"
+              rating: 5
+              user: test5
+            - "@controls":
+                profile:
+                  href: /profiles/feedback/
+                self:
+                  href: /api/users/test5/feedbacks/2/
+              "@type": feedback
+              comment: Great insight second!
+              created_date: "2025-04-11T02:39:54"
+              id: 2
+              insight: 6
+              modified_date: "2025-04-11T02:39:54"
+              rating: 5
+              user: test5
