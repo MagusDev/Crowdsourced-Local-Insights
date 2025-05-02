@@ -1,12 +1,53 @@
 parameters:
-- $ref: '#/components/parameters/insight'
+  - $ref: "#/components/parameters/insight"
 tags:
   - insights
 description: Delete insight by ID
 security:
-  - localInsightsApiKey: [ ]
+  - localInsightsApiKey: []
 responses:
-    '204':
-      description: Insight deleted successfully
-    '404':
-      description: Insight not found
+  "204":
+    description: Insight deleted successfully
+  "401":
+    description: Authentication required
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Authentication required
+            "@messages":
+              ["You must provide a valid API key to access this resource."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/
+  "403":
+    description: Forbidden
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Forbidden
+            "@messages": ["You are not authorized to delete this insight."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/
+  "404":
+    description: Insight not found
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested insight does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/

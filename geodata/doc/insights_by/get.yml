@@ -1,14 +1,14 @@
 parameters:
-  - $ref: '#/components/parameters/user'
+  - $ref: "#/components/parameters/user"
 tags:
   - insights
 description: Get all insights of a specific user
 responses:
-  '200':
+  "200":
     content:
       application/vnd.mason+json:
         example:
-          '@controls':
+          "@controls":
             geometa:add-insight:
               encoding: json
               href: /api/insights/
@@ -34,9 +34,9 @@ responses:
                   title:
                     type: string
                 required:
-                - title
-                - longitude
-                - latitude
+                  - title
+                  - longitude
+                  - latitude
                 type: object
               title: Add a new insight
             geometa:users-all:
@@ -48,33 +48,31 @@ responses:
               href: /api/insights/
             up:
               href: /api/users/test3/
-          '@type': insights
+          "@type": insights
           items:
-          - '@controls':
-              profile:
-                href: /profiles/insight/
-              self:
-                href: /api/insights/2/
-            '@type': insight
-            category: Sight
-            created_date: '2025-04-10T16:31:32.113893'
-            id: 2
-            latitude: 60.1699
-            longitude: 24.9354
-            title: Nallikari Beach second insight
-            user: test3
-          - '@controls':
-              profile:
-                href: /profiles/insight/
-              self:
-                href: /api/insights/3/
-            '@type': insight
-            category: Sight
-            created_date: '2025-04-10T16:31:32.113893'
-            id: 3
-            latitude: 60.1699
-            longitude: 24.9354
-            title: Nallikari Beach third insight
-            user: test3
-  '500':
-    description: Internal server error
+            - "@controls":
+                profile:
+                  href: /profiles/insight/
+                self:
+                  href: /api/insights/2/
+              "@type": insight
+              category: Sight
+              created_date: "2025-04-10T16:31:32.113893"
+              id: 2
+              latitude: 60.1699
+              longitude: 24.9354
+              title: Nallikari Beach second insight
+              user: test3
+            - "@controls":
+                profile:
+                  href: /profiles/insight/
+                self:
+                  href: /api/insights/3/
+              "@type": insight
+              category: Sight
+              created_date: "2025-04-10T16:31:32.113893"
+              id: 3
+              latitude: 60.1699
+              longitude: 24.9354
+              title: Nallikari Beach third insight
+              user: test3

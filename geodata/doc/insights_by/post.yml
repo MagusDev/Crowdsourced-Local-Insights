@@ -1,38 +1,113 @@
 parameters:
-  - $ref: '#/components/parameters/user'
+  - $ref: "#/components/parameters/user"
 tags:
-    - insights
+  - insights
 description: Create a new insight
 security:
-  - localInsightsApiKey: [ ]
+  - localInsightsApiKey: []
 requestBody:
-    description: JSON data contain insight required fields
-    content:
-      application/json:
-        schema:
-          $ref: '#/components/schemas/Insight'
-        example:
-          creator: 12345
-          title: Insight 1
-          description: K City Market
-          longitude: 12.345678
-          latitude: 34.567890
-          image: http://totally.not.placehold.er/
-          address: Oulu, Finland
-          category: Test category
-          subcategory: Test subcategory
-          external_link: http://totally.not.placehold.er/
+  description: JSON data contain insight required fields
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/Insight"
+      example:
+        creator: 12345
+        title: Insight 1
+        description: K City Market
+        longitude: 12.345678
+        latitude: 34.567890
+        image: http://totally.not.placehold.er/
+        address: Oulu, Finland
+        category: Test category
+        subcategory: Test subcategory
+        external_link: http://totally.not.placehold.er/
 
 responses:
-    '201':
-      description: Insight created successfully
-      headers:
-        Location:
-          description: URI of newly created insight
-          schema:
-            type: string
+  "201":
+    description: Insight created successfully
+    headers:
+      Location:
+        description: URI of newly created insight
+        schema:
+          type: string
 
-    '415':
-      description: Request content type must be JSON
-    '400':
-      description: Incomplete request
+  "400":
+    description: Invalid request data
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Invalid input
+            "@messages": ["Validation error details"]
+          "@type": error
+          "@namespaces":
+            geometa:
+              name: /geometa/link-relations#
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/testuser1/insights/
+
+  "401":
+    description: Authentication required
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Authentication required
+            "@messages":
+              ["You must provide a valid API key to access this resource."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/testuser1/insights/
+
+  "403":
+    description: Forbidden
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Forbidden
+            "@messages":
+              ["You are not authorized to create insights for this user."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/testuser1/insights/
+
+  "404":
+    description: User not found
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested user does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/testuser1/insights/
+
+  "415":
+    description: Wrong media type was used
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Unsupported Media Type
+            "@messages": ["Content-Type must be application/json."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/testuser1/insights/

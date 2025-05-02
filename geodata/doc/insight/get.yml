@@ -1,17 +1,18 @@
 parameters:
-- $ref: '#/components/parameters/insight'
+  - $ref: "#/components/parameters/insight"
 tags:
   - insights
 description: Get insight detail by ID
 responses:
-  '200':
+  "200":
     content:
       application/vnd.mason+json:
         example:
-          '@controls':
+          "@controls":
             geometa:insights-all:
-              description: 'Fetches all insights. Optional query parameters: bbox,
-                usr, ic, isc'
+              description:
+                "Fetches all insights. Optional query parameters: bbox,
+                usr, ic, isc"
               href: /api/insights/
               method: GET
               title: Get all insigths
@@ -19,24 +20,37 @@ responses:
               href: /profiles/insight/
             self:
               href: /api/insights/1/
-          '@namespaces':
+          "@namespaces":
             geometa:
               name: /geometa/link-relations#
-          '@type': insight
+          "@type": insight
           address: Leiritie 10, 90510 Oulu
           average_rating: null
           category: Sight
-          created_date: '2025-04-10T16:31:05.401828'
-          description: "A white sandy beach with summer caf\xE9s and water sports\
+          created_date: "2025-04-10T16:31:05.401828"
+          description:
+            "A white sandy beach with summer caf\xE9s and water sports\
             \ equipment rentals."
           external_link: https://nallikari.fi
           id: 1
           image: nallikari.jpg
           latitude: 60.1699
           longitude: 24.9354
-          modified_date: '2025-04-10T16:31:05.401833'
+          modified_date: "2025-04-10T16:31:05.401833"
           subcategory: Beach
           title: Nallikari Beach
           user: null
-  '404':
+  "404":
     description: Insight not found
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested insight does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/

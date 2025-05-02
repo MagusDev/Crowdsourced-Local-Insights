@@ -1,17 +1,17 @@
 parameters:
-- $ref: '#/components/parameters/user'
-- $ref: '#/components/parameters/insight'
+  - $ref: "#/components/parameters/user"
+  - $ref: "#/components/parameters/insight"
 tags:
   - insights
 description: Update insight by ID
 security:
-  - localInsightsApiKey: [ ]
+  - localInsightsApiKey: []
 requestBody:
   description: JSON data contain insight required fields
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/Insight'
+        $ref: "#/components/schemas/Insight"
       example:
         title: K City Market
         description: K City Market
@@ -24,11 +24,110 @@ requestBody:
         external_link: http://totally.not.placehold.er/
 
 responses:
-  '200':
+  "200":
     description: Insight updated successfully
-  '400':
+    content:
+      application/vnd.mason+json:
+        example:
+          "@controls":
+            geometa:insights-all:
+              description: "Fetches all insights. Optional query parameters: bbox, usr, ic, isc"
+              href: /api/insights/
+              method: GET
+              title: Get all insigths
+            profile:
+              href: /profiles/insight/
+            self:
+              href: /api/insights/1/
+          "@namespaces":
+            geometa:
+              name: /geometa/link-relations#
+          "@type": insight
+          address: Oulu, Finland
+          average_rating: null
+          category: Test category
+          created_date: "2025-04-10T16:31:05.401828"
+          description: K City Market
+          external_link: http://totally.not.placehold.er/
+          id: 1
+          image: http://totally.not.placehold.er/
+          latitude: 34.567890
+          longitude: 12.345678
+          modified_date: "2025-04-10T16:31:05.401833"
+          subcategory: Test subcategory
+          title: K City Market
+          user: testuser1
+  "400":
     description: Request body was not valid
-  '404':
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Invalid input
+            "@messages": ["Validation error details"]
+          "@type": error
+          "@namespaces":
+            geometa:
+              name: /geometa/link-relations#
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/
+  "401":
+    description: Authentication required
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Authentication required
+            "@messages":
+              ["You must provide a valid API key to access this resource."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/
+  "403":
+    description: Forbidden
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Forbidden
+            "@messages": ["You are not authorized to modify this insight."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/
+  "404":
     description: Insight was not found
-  '415':
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested insight does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/
+  "415":
     description: Wrong media type was used
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Unsupported Media Type
+            "@messages": ["Content-Type must be application/json."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/insights/1/
