@@ -2,11 +2,58 @@ tags:
   - users
 description: Delete user by username or email
 security:
-  - localInsightsApiKey: [ ]
+  - localInsightsApiKey: []
 parameters:
-  - $ref: '#/components/parameters/user'
+  - $ref: "#/components/parameters/user"
+
 responses:
-    '204':
-      description: User deleted successfully
-    '404':
-      description: User not found
+  "204":
+    description: User deleted successfully
+  "401":
+    description: Authentication required
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Authentication required
+            "@messages":
+              ["You must provide a valid API key to access this resource."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/jane_doe/
+            auth:login:
+              href: /api/users/
+              method: POST
+              encoding: json
+              title: Authenticate with API key
+  "403":
+    description: User is not authorized
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Forbidden
+            "@messages": ["You are not authorized to deactivate this user."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/jane_doe/
+  "404":
+    description: User not found
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested user does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/jane_doe/

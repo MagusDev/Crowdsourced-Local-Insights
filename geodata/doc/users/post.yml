@@ -6,7 +6,7 @@ requestBody:
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/User'
+        $ref: "#/components/schemas/User"
       example:
         username: jane_doe
         email: jane@example.com
@@ -18,16 +18,66 @@ requestBody:
         profile_picture_thumb: base64string...
 
 responses:
-  '201':
+  "201":
     description: User created successfully
     headers:
       Location:
         description: URI of newly created user
         schema:
           type: string
-  '415':
-    description: Request content type must be JSON
-  '400':
-    description: Incomplete request
-  '409':
+    content:
+      application/vnd.mason+json:
+        example:
+          "@type": user
+          id: 123
+          username: jane_doe
+          email: jane@example.com
+          api_key: abcdef123456789...
+          "@controls":
+            self:
+              href: /api/users/jane_doe/
+  "400":
+    description: Incomplete request or invalid input
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Invalid input
+            "@messages": ["Validation error details"]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/
+            retry:
+              href: /api/users/
+              method: POST
+  "409":
     description: User name or email already exists
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Database conflict
+            "@messages": ["Username or email already exists."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/
+  "415":
+    description: Request content type must be JSON
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Unsupported Media Type
+            "@messages": ["Content-Type must be application/json."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/
