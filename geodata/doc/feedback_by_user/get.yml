@@ -2,14 +2,14 @@ tags:
   - feedbacks
 description: Get feedback by ID
 parameters:
-  - $ref: '#/components/parameters/user'
-  - $ref: '#/components/parameters/feedback'
+  - $ref: "#/components/parameters/user"
+  - $ref: "#/components/parameters/feedback"
 responses:
-  '200':
+  "200":
     content:
       application/vnd.mason+json:
         example:
-          '@controls':
+          "@controls":
             author:
               href: /api/users/test6/
             collection:
@@ -21,16 +21,29 @@ responses:
               href: /api/users/test6/insights/3/feedbacks/3/
             up:
               href: /api/insights/7/
-          '@namespaces':
+          "@namespaces":
             geometa:
               name: /geometa/link-relations#
-          '@type': feedback
+          "@type": feedback
           comment: Great insight
-          created_date: '2025-04-11T03:36:38'
+          created_date: "2025-04-11T03:36:38"
           id: 3
           insight: 7
-          modified_date: '2025-04-11T03:38:02'
+          modified_date: "2025-04-11T03:38:02"
           rating: 5
           user: test6
-  '404':
-    description: Feedback not found
+
+  "404":
+    description: Feedback not found
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested feedback does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/1/

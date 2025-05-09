@@ -26,16 +26,80 @@ responses:
           type: string
   "400":
     description: Incomplete request or invalid data
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Invalid input
+            "@messages": ["Validation error details"]
+          "@type": error
+          "@namespaces":
+            geometa:
+              name: /geometa/link-relations#
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/
 
   "401":
     description: Authentication required
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Authentication required
+            "@messages":
+              ["You must provide a valid API key to access this resource."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/
 
   "403":
     description: Not authorized to create feedback
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Forbidden
+            "@messages":
+              ["You are not authorized to create feedback for this insight."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/
 
   "404":
     description: User or insight not found
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested user or insight does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/
 
   "415":
     description: Request content type must be JSON
-
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Unsupported Media Type
+            "@messages": ["Content-Type must be application/json."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/

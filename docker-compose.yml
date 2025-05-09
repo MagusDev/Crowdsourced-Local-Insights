@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  app:
+    build: .
+    volumes:
+      - ./db:/app/db
+      - ./instance:/app/instance
+    environment:
+      - FLASK_APP=geodata
+    restart: always
+    # Keep the original Dockerfile with just gunicorn
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    restart: always

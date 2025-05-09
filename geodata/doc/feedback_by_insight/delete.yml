@@ -1,7 +1,7 @@
 parameters:
-  - $ref: '#/components/parameters/user'
-  - $ref: '#/components/parameters/insight'
-  - $ref: '#/components/parameters/feedback'
+  - $ref: "#/components/parameters/user"
+  - $ref: "#/components/parameters/insight"
+  - $ref: "#/components/parameters/feedback"
 
 tags:
   - feedbacks
@@ -10,7 +10,48 @@ security:
   - localInsightsApiKey: []
 
 responses:
-    '204':
-      description: Feedback deleted successfully
-    '404':
-      description: Feedback not found
+  "204":
+    description: Feedback deleted successfully
+  "401":
+    description: Authentication required
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Authentication required
+            "@messages":
+              ["You must provide a valid API key to access this resource."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/1/
+  "403":
+    description: Not authorized to delete this feedback
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Forbidden
+            "@messages": ["You are not authorized to delete this feedback."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/1/
+  "404":
+    description: Feedback not found
+    content:
+      application/vnd.mason+json:
+        example:
+          "@error":
+            "@message": Resource not found
+            "@messages": ["The requested feedback does not exist."]
+          "@type": error
+          "@controls":
+            profile:
+              href: /profiles/error/
+            self:
+              href: /api/users/test5/insights/6/feedbacks/1/
