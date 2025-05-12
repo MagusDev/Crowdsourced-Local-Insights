@@ -81,8 +81,8 @@ class UserCollection(flask_restful.Resource):
 
         # Add user to session
         db.session.add(new_user)
-        db.session.flush()  
-        
+        db.session.flush()
+
         # Create and add API key with the user ID
         api_key = ApiKey(
             user_id=new_user.id,
@@ -90,7 +90,7 @@ class UserCollection(flask_restful.Resource):
             admin= False,
         )
         db.session.add(api_key)
-            
+
             # Commit both in one transaction
         db.session.commit()
         # This was not called throught tests
@@ -141,8 +141,8 @@ class UserItem(flask_restful.Resource):
         if not short:
             body.add_control_delete_user(user)
             body.add_control_edit_user(user)
-            body.add_control_feedback_collection(user, authuser=current_user)            
-        
+            body.add_control_feedback_collection(user, authuser=current_user)
+
         return Response(json.dumps(body), 200, mimetype=MASON)
 
 
@@ -161,14 +161,14 @@ class UserItem(flask_restful.Resource):
                 403,
                 "You are not authorized to update this user."
             )
-        
+
         # Validate content type
         if request.content_type != "application/json":
             return GeodataBuilder.create_error_response(
                 415,
                 "Content-Type must be application/json."
             )
-        
+
         # Parse and validate JSON payload
         try:
             data = request.get_json()
@@ -219,7 +219,7 @@ class UserItem(flask_restful.Resource):
         body.add_control_delete_user(user)
 
         return Response(json.dumps(body), 204, mimetype=MASON)
-    
+
 
     def delete(self, user):
         """

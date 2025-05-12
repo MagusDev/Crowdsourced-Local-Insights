@@ -102,7 +102,7 @@ class MasonBuilder(dict):
         : param str title: human-readable title for the control
         : param dict schema: a dictionary representing a valid JSON schema
         """
-    
+
         self.add_control(
             ctrl_name,
             href,
@@ -131,7 +131,7 @@ class MasonBuilder(dict):
             title=title,
             schema=schema
         )
-        
+
     def add_control_delete(self, title, href):
         """
         Utility method for adding PUT type controls. The control is
@@ -142,7 +142,7 @@ class MasonBuilder(dict):
         : param str href: target URI for the control
         : param str title: human-readable title for the control
         """
-        
+
         self.add_control(
             "delete",
             href,
@@ -263,7 +263,7 @@ class GeodataBuilder(MasonBuilder):
             url_for("api.user", user=user),
             schema=User.get_schema()
         )
-    
+
     def add_control_edit_insight(self, user, insight):
         """
         Add a control to edit insight
@@ -291,7 +291,7 @@ class GeodataBuilder(MasonBuilder):
         - All insights
         - User related insights (if user is provided)
         """
-        
+
         if user:
             self.add_control(
                 "geometa:insights-by",
@@ -345,7 +345,7 @@ class GeodataBuilder(MasonBuilder):
             title="Get all users",
             description="Fetches the list of all registered users."
         )
-    
+
     @staticmethod
     def create_error_response(status_code, title, message=None):
         """
@@ -380,7 +380,7 @@ class GeodataBuilder(MasonBuilder):
         if status_code == 400:
             # Suggest retrying the current action
             builder.add_control("retry", href=request.path, method="POST")
-            
+
         return Response(json.dumps(builder), status=status_code, mimetype=MASON)
 
 class UserConverter(BaseConverter):

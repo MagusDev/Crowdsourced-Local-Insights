@@ -5,13 +5,11 @@ import json
 from datetime import datetime
 from flask import request, Response, url_for
 from flask_restful import Resource
-from werkzeug.exceptions import UnsupportedMediaType, BadRequest
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from jsonschema import validate, ValidationError, Draft7Validator
 from geodata.constants import *
 from geodata import db
-from geodata.auth import require_admin, require_user_auth, get_authenticated_user
+from geodata.auth import get_authenticated_user
 from geodata.constants import MASON
 from geodata.models import Insight, User
 from geodata.utils import GeodataBuilder
@@ -44,20 +42,20 @@ class InsightCollection(Resource):
         params, error_response = self._parse_and_validate_params(user_path=(user is not None))
         if error_response:
             return error_response
-        
+
         if user:
             params["username"] = user.username
-        
+
         insights = self._fetch_insights(params)
 
         body = self._build_insight_collection_response(insights, user)
-        
+
         if user:
             body.add_control("up", url_for("api.user", user=user))
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-  
+
     def post(self, user=None):
         """
         Create a new insight.
@@ -108,7 +106,7 @@ class InsightCollection(Resource):
                 "Invalid request data",
                 str(e)
             )
-        
+
         # Create new Insight
         new_insight = Insight(
             creator=creator_id,
@@ -137,7 +135,7 @@ class InsightCollection(Resource):
             response.headers["Location"] = url_for("api.insight", insight=new_insight)
 
         return response
-    
+
 
     def _parse_and_validate_params(self, user_path=False):
         bbox = request.args.get("bbox")
@@ -166,14 +164,14 @@ class InsightCollection(Resource):
                 "Expected format: bbox=25.4,65.0,25.6,65.1"
             )
 
-        # Removed conversion to lower 
+        # Removed conversion to lower
         return {
             "bbox": (min_lon, min_lat, max_lon, max_lat) if bbox else None,
             "username": username if username else None,
             "category": category if category else None,
             "subcategory": subcategory if subcategory else None
         }, None
-    
+
 
     def _fetch_insights(self, params):
         query = Insight.query
@@ -202,7 +200,7 @@ class InsightCollection(Resource):
         query = query.options(joinedload(Insight.user))
 
         return query.all()
-    
+
 
     def _build_insight_collection_response(self, insights, user=None):
         body = GeodataBuilder()
@@ -277,7 +275,7 @@ class InsightItem(Resource):
                 "Forbidden",
                 "You do not have permission to update this insight."
             )
-        
+
         # 2. Check content type
         if request.content_type != "application/json":
             return GeodataBuilder.create_error_response(
@@ -296,7 +294,7 @@ class InsightItem(Resource):
                 "Invalid request body",
                 str(e)
             )
-        
+
         # 4. Perform update
         insight.title = data["title"]
         insight.description = data["description"]
