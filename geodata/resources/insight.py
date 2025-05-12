@@ -1,6 +1,7 @@
 """
 This module defines insight resource.
 """
+
 import json
 from datetime import datetime
 from flask import request, Response, url_for
@@ -20,7 +21,7 @@ draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 
 class InsightCollection(Resource):
     """
-      Resource for all the insights, a simple list without much detail
+    Resource for all the insights, a simple list without much detail
     """
 
     def get(self, user=None):
@@ -39,7 +40,9 @@ class InsightCollection(Resource):
         Returns a MASON-formatted collection of insights with basic information
         and hypermedia controls for navigation and interaction.
         """
-        params, error_response = self._parse_and_validate_params(user_path=(user is not None))
+        params, error_response = self._parse_and_validate_params(
+            user_path=(user is not None)
+        )
         if error_response:
             return error_response
 
@@ -55,7 +58,6 @@ class InsightCollection(Resource):
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-
     def post(self, user=None):
         """
         Create a new insight.
@@ -69,9 +71,7 @@ class InsightCollection(Resource):
         # Require content-type to be JSON
         if request.content_type != "application/json":
             return GeodataBuilder.create_error_response(
-                415,
-                "Unsupported Media Type",
-                "Content-Type must be application/json"
+                415, "Unsupported Media Type", "Content-Type must be application/json"
             )
 
         # Determine authenticated user via API key
@@ -82,14 +82,12 @@ class InsightCollection(Resource):
                 return GeodataBuilder.create_error_response(
                     401,
                     "Authentication required",
-                    "You must authenticate to post as a user."
+                    "You must authenticate to post as a user.",
                 )
 
             if auth_user != user:
                 return GeodataBuilder.create_error_response(
-                    403,
-                    "Forbidden",
-                    "You are not allowed to post as another user."
+                    403, "Forbidden", "You are not allowed to post as another user."
                 )
             creator_id = auth_user.id
         else:
@@ -102,9 +100,7 @@ class InsightCollection(Resource):
             validate(data, Insight.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
             return GeodataBuilder.create_error_response(
-                400,
-                "Invalid request data",
-                str(e)
+                400, "Invalid request data", str(e)
             )
 
         # Create new Insight
@@ -120,7 +116,7 @@ class InsightCollection(Resource):
             subcategory=data.get("subcategory"),
             external_link=data.get("external_link"),
             created_date=datetime.now(),
-            modified_date=datetime.now()
+            modified_date=datetime.now(),
         )
 
         db.session.add(new_insight)
@@ -129,13 +125,14 @@ class InsightCollection(Resource):
         response = Response(status=201)
         if user:
             # Use user-specific endpoint for user insights
-            response.headers["Location"] = url_for("api.insight_by", user=user, insight=new_insight)
+            response.headers["Location"] = url_for(
+                "api.insight_by", user=user, insight=new_insight
+            )
         else:
             # Use general endpoint for anonymous insights
             response.headers["Location"] = url_for("api.insight", insight=new_insight)
 
         return response
-
 
     def _parse_and_validate_params(self, user_path=False):
         bbox = request.args.get("bbox")
@@ -146,9 +143,7 @@ class InsightCollection(Resource):
         # At least bbox or username is required
         if not user_path and not bbox and not username:
             return None, GeodataBuilder.create_error_response(
-                400,
-                "Missing bbox or username",
-                "Provide at least one of: bbox or usr"
+                400, "Missing bbox or username", "Provide at least one of: bbox or usr"
             )
 
         # Try parsing the bbox if provided
@@ -159,9 +154,7 @@ class InsightCollection(Resource):
                 min_lon = min_lat = max_lon = max_lat = None
         except ValueError:
             return None, GeodataBuilder.create_error_response(
-                400,
-                "Invalid bbox format",
-                "Expected format: bbox=25.4,65.0,25.6,65.1"
+                400, "Invalid bbox format", "Expected format: bbox=25.4,65.0,25.6,65.1"
             )
 
         # Removed conversion to lower
@@ -169,9 +162,8 @@ class InsightCollection(Resource):
             "bbox": (min_lon, min_lat, max_lon, max_lat) if bbox else None,
             "username": username if username else None,
             "category": category if category else None,
-            "subcategory": subcategory if subcategory else None
+            "subcategory": subcategory if subcategory else None,
         }, None
-
 
     def _fetch_insights(self, params):
         query = Insight.query
@@ -181,7 +173,7 @@ class InsightCollection(Resource):
             min_lon, min_lat, max_lon, max_lat = params["bbox"]
             query = query.filter(
                 Insight.longitude.between(min_lon, max_lon),
-                Insight.latitude.between(min_lat, max_lat)
+                Insight.latitude.between(min_lat, max_lat),
             )
 
         # Filter by creator's username
@@ -200,7 +192,6 @@ class InsightCollection(Resource):
         query = query.options(joinedload(Insight.user))
 
         return query.all()
-
 
     def _build_insight_collection_response(self, insights, user=None):
         body = GeodataBuilder()
@@ -222,9 +213,10 @@ class InsightCollection(Resource):
 
         return body
 
+
 class InsightItem(Resource):
     """
-      Resource for single insight with all the details
+    Resource for single insight with all the details
     """
 
     @cache.cached()
@@ -250,7 +242,6 @@ class InsightItem(Resource):
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-
     def put(self, insight, user=None):
         """
         Update a single insight.
@@ -263,7 +254,7 @@ class InsightItem(Resource):
             return GeodataBuilder.create_error_response(
                 401,
                 "Unauthorized",
-                "You must provide a valid API key to update this insight."
+                "You must provide a valid API key to update this insight.",
             )
 
         is_owner = insight.user and insight.user.id == auth_user.id
@@ -271,17 +262,13 @@ class InsightItem(Resource):
 
         if not (is_owner or is_admin):
             return GeodataBuilder.create_error_response(
-                403,
-                "Forbidden",
-                "You do not have permission to update this insight."
+                403, "Forbidden", "You do not have permission to update this insight."
             )
 
         # 2. Check content type
         if request.content_type != "application/json":
             return GeodataBuilder.create_error_response(
-                415,
-                "Unsupported Media Type",
-                "Content-Type must be application/json"
+                415, "Unsupported Media Type", "Content-Type must be application/json"
             )
 
         # 3. Validate request body
@@ -290,9 +277,7 @@ class InsightItem(Resource):
             validate(data, Insight.get_schema(), format_checker=draft7_format_checker)
         except ValidationError as e:
             return GeodataBuilder.create_error_response(
-                400,
-                "Invalid request body",
-                str(e)
+                400, "Invalid request body", str(e)
             )
 
         # 4. Perform update
@@ -326,7 +311,6 @@ class InsightItem(Resource):
         response.headers["Location"] = url_for("api.insight", insight=insight)
         return response
 
-
     def delete(self, insight, user=None):
         """
         Delete a single insight.
@@ -339,7 +323,7 @@ class InsightItem(Resource):
             return GeodataBuilder.create_error_response(
                 401,
                 "Unauthorized",
-                "You must provide a valid API key to delete this insight."
+                "You must provide a valid API key to delete this insight.",
             )
 
         is_owner = insight.user and insight.user.id == auth_user.id
@@ -347,9 +331,7 @@ class InsightItem(Resource):
 
         if not (is_owner or is_admin):
             return GeodataBuilder.create_error_response(
-                403,
-                "Forbidden",
-                "You do not have permission to delete this insight."
+                403, "Forbidden", "You do not have permission to delete this insight."
             )
 
         # 2. Delete the resource

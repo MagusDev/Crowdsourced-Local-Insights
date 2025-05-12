@@ -40,6 +40,7 @@ def require_admin(func):
     """
     Decorator to require an admin API key.
     """
+
     def wrapper(*args, **kwargs):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
@@ -53,6 +54,7 @@ def require_admin(func):
         if db_key and secrets.compare_digest(key_hash, db_key.key):
             return func(*args, **kwargs)
         raise Forbidden("Invalid API key")
+
     return wrapper
 
 
@@ -61,9 +63,10 @@ def require_user_auth(func):
     Decorator to require a user API key.
     Mainly used for user specific endpoints put and delete methods.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
-        user = kwargs.get('user')  # Get the user from kwargs
+        user = kwargs.get("user")  # Get the user from kwargs
 
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
@@ -77,4 +80,5 @@ def require_user_auth(func):
         if db_key and secrets.compare_digest(key_hash, db_key.key):
             return func(*args, **kwargs)
         raise Forbidden("Invalid API key")
+
     return wrapper

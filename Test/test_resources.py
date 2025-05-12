@@ -1,6 +1,7 @@
 """
 This module is used to prepare test resources.
 """
+
 import base64
 import random
 import tempfile
@@ -11,7 +12,6 @@ from urllib.parse import quote
 import pytest
 from geodata import db, create_app
 from geodata.models import User, Insight, Feedback
-
 
 
 @pytest.fixture
@@ -68,13 +68,12 @@ def _populate_db():
             password=User().hash_password("adminpass"),
             first_name="Admin",
             last_name="User",
-            role="ADMIN"
-        )
+            role="ADMIN",
+        ),
     ]
 
     db.session.add_all(test_users)
     db.session.commit()
-
 
     test_insights = [
         Insight(
@@ -82,12 +81,12 @@ def _populate_db():
             description="Great coffee shop with free WiFi and quiet atmosphere",
             longitude=25.473,
             latitude=65.012,
-            created_date= datetime.utcnow(),
-            modified_date= datetime.utcnow(),
+            created_date=datetime.utcnow(),
+            modified_date=datetime.utcnow(),
             creator=test_users[0].id,
             category="Food & Drink",
             subcategory="Cafe",
-            address="123 Test Street, Oulu"
+            address="123 Test Street, Oulu",
         ),
         Insight(
             title="Beautiful Park",
@@ -99,20 +98,20 @@ def _populate_db():
             creator=test_users[1].id,
             category="Outdoor",
             subcategory="Park",
-            address="456 Park Avenue, Oulu"
+            address="456 Park Avenue, Oulu",
         ),
         Insight(
             title="Free Parking Area",
             description="Always available parking spots, even during rush hours",
             longitude=25.465,
             latitude=65.014,
-            created_date= datetime.utcnow(),
+            created_date=datetime.utcnow(),
             modified_date=datetime.utcnow(),
             creator=test_users[0].id,
             category="Infrastructure",
             subcategory="Parking",
-            address="789 Main Street, Oulu"
-        )
+            address="789 Main Street, Oulu",
+        ),
     ]
 
     db.session.add_all(test_insights)
@@ -123,26 +122,27 @@ def _populate_db():
             user_id=test_users[1].id,
             insight_id=test_insights[0].id,
             rating=5,
-            comment="Really useful insight! I found this place because of you."
+            comment="Really useful insight! I found this place because of you.",
         ),
         Feedback(
             user_id=test_users[0].id,
             insight_id=test_insights[1].id,
             rating=4,
-            comment="Nice park, good for relaxing"
+            comment="Nice park, good for relaxing",
         ),
         Feedback(
             user_id=test_users[2].id,
             insight_id=test_insights[0].id,
             rating=3,
-            comment="Average place, coffee was just ok"
-        )
+            comment="Average place, coffee was just ok",
+        ),
     ]
 
     db.session.add_all(test_feedback)
     db.session.commit()
 
-def get_user_json(number =1):
+
+def get_user_json(number=1):
     """
     Generate user JSON data
     """
@@ -165,15 +165,17 @@ def get_api_key_header(client, number=99):
     api_key = response.get_json()["api_key"]
     return {
         "Authorization": f"Bearer {api_key}",  # Changed from "Geodata-Api-Key"
-        "user": user_data["username"]
+        "user": user_data["username"],
     }
 
 
-class TestUsersCollection():
+class TestUsersCollection:
     """
     Test user collection
     """
+
     RESOURCE_URL = "/api/users/"
+
     def test_get(self, client):
         """
         Test get users
@@ -190,14 +192,15 @@ class TestUsersCollection():
         Test create user
         """
 
-        response = client.post(self.RESOURCE_URL, data= "not json")
+        response = client.post(self.RESOURCE_URL, data="not json")
         assert response.status_code in [400, 415]
-
 
         valid_user = get_user_json()
         response = client.post(self.RESOURCE_URL, json=valid_user)
         assert response.status_code == 201
-        assert response.headers["Location"] == "/api/users/" + valid_user["username"] + "/"
+        assert (
+            response.headers["Location"] == "/api/users/" + valid_user["username"] + "/"
+        )
         response = client.get(response.headers["Location"])
         assert response.status_code == 200
 
@@ -207,12 +210,13 @@ class TestUsersCollection():
         valid_user.pop("email")
         response = client.post(self.RESOURCE_URL, json=valid_user)
         assert response.status_code == 400
-    
 
-class TestUserItem():
+
+class TestUserItem:
     """
     Test user
     """
+
     RESOURCE_URL = "/api/users/testuser1/"
     INVALID_URL = "/api/users/invaliduser/"
 
@@ -224,37 +228,36 @@ class TestUserItem():
         assert response.status_code == 200
         body = response.get_json()
         assert body["username"] == "testuser1"
-        
-        assert "email" not in body 
-        
+
+        assert "email" not in body
+
         assert "geometa:edit-user" not in body["@controls"]
         assert "geometa:delete-user" not in body["@controls"]
         assert "geometa:user-feedbacks" not in body["@controls"]
-        
 
         api_key_info = get_api_key_header(client, 50)
         username = api_key_info["user"]
         headers = {"Authorization": api_key_info["Authorization"]}
-        
+
         response = client.get(f"/api/users/{username}/", headers=headers)
         assert response.status_code == 200
         body = response.get_json()
-        
+
         assert "email" in body
         assert "status" in body
-        
+
         assert "edit" in body["@controls"]
         assert "delete" in body["@controls"]
         assert "geometa:user-feedbacks" in body["@controls"]
-        
+
         response = client.get(self.INVALID_URL)
         assert response.status_code == 404
-        
-        response = client.get(self.RESOURCE_URL, headers=headers) 
+
+        response = client.get(self.RESOURCE_URL, headers=headers)
         assert response.status_code == 200
-        body = response.get_json() 
-        assert "email" not in body 
-        
+        body = response.get_json()
+        assert "email" not in body
+
         assert "edit" not in body["@controls"]
         assert "delete" not in body["@controls"]
 
@@ -267,7 +270,7 @@ class TestUserItem():
         username = api_key_info["user"]
         resource_url = f"/api/users/{username}/"
         headers = {"Authorization": api_key_info["Authorization"]}
-        
+
         valid_update = {
             "username": username,
             "email": f"{username}@updated.com",
@@ -275,26 +278,26 @@ class TestUserItem():
             "first_name": "Updated",
             "last_name": "User",
             "status": "ACTIVE",
-            "role": "USER"
+            "role": "USER",
         }
-        
+
         response = client.put(resource_url, headers=headers, data="not json")
         assert response.status_code == 415
-        
+
         response = client.put(
             resource_url,
             headers=headers,
             data="{bad json",
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 400
-        
+
         response = client.put(self.INVALID_URL, headers=headers, json=valid_update)
         assert response.status_code == 404
 
         response = client.put(resource_url, json=valid_update)
         assert response.status_code == 403
-        
+
         other_user_info = get_api_key_header(client, 42)
         wrong_headers = {"Authorization": other_user_info["Authorization"]}
         response = client.put(resource_url, headers=wrong_headers, json=valid_update)
@@ -311,44 +314,45 @@ class TestUserItem():
         conflict_user = get_user_json(76)
         response = client.post("/api/users/", json=conflict_user)
         assert response.status_code == 201
-        
+
         conflict_update = valid_update.copy()
         conflict_update["username"] = conflict_user["username"]
         response = client.put(resource_url, headers=headers, json=conflict_update)
         assert response.status_code == 409
-        
+
         response = client.put(resource_url, headers=headers, json=valid_update)
         assert response.status_code == 204
-        
+
         response = client.get(resource_url)
         body = response.get_json()
         assert body["first_name"] == valid_update["first_name"]
         assert body["last_name"] == valid_update["last_name"]
 
-
     def test_admin_role_protection(self, client):
         """Test that admins cannot remove their own admin rights"""
         # Create an admin user using the CLI command
         from geodata.models import create_admin
+
         app = client.application
         runner = app.test_cli_runner()
-        result = runner.invoke(create_admin, ["admintest", "admintest@example.com", "adminpass123"])
+        result = runner.invoke(
+            create_admin, ["admintest", "admintest@example.com", "adminpass123"]
+        )
         assert "Admin created" in result.output
         import re
-        api_key_match = re.search(r'API key: (\S+)', result.output)
-        admin_key = api_key_match.group(1)
-        
 
-        admin_headers = {"Authorization": f"Bearer {admin_key}"}    
+        api_key_match = re.search(r"API key: (\S+)", result.output)
+        admin_key = api_key_match.group(1)
+
+        admin_headers = {"Authorization": f"Bearer {admin_key}"}
         response = client.get("/api/users/", headers=admin_headers)
         assert response.status_code == 200
-        
+
         response = client.get(f"/api/users/admintest/", headers=admin_headers)
         assert response.status_code == 200
         body = response.get_json()
         assert body.get("role") == "ADMIN"
         assert "edit" in body["@controls"], f"Controls in response: {body['@controls']}"
-        
 
         demote_data = {
             "username": "admintest",
@@ -356,45 +360,46 @@ class TestUserItem():
             "password": "adminpass123",
             "first_name": "Admin",
             "last_name": "Test",
-            "role": "USER"
+            "role": "USER",
         }
-        
+
         response = client.put(
-            f"/api/users/admintest/",
-            headers=admin_headers,
-            json=demote_data
+            f"/api/users/admintest/", headers=admin_headers, json=demote_data
         )
-        
+
         assert response.status_code == 400
         body = response.get_json()
-        assert "cannot remove your own admin rights" in body["@error"]["@message"].lower()
+        assert (
+            "cannot remove your own admin rights" in body["@error"]["@message"].lower()
+        )
 
         regular_user = get_user_json(200)
         response = client.post("/api/users/", json=regular_user)
         assert response.status_code == 201
-        
-        response = client.get(f"/api/users/{regular_user['username']}/", headers=admin_headers)
+
+        response = client.get(
+            f"/api/users/{regular_user['username']}/", headers=admin_headers
+        )
         assert response.status_code == 200
         body = response.get_json()
         assert body.get("role") == "USER"
-        
+
         promote_data = {
             "username": regular_user["username"],
             "email": regular_user["email"],
             "password": regular_user["password"],
             "first_name": regular_user["first_name"],
             "last_name": regular_user["last_name"],
-            "role": "ADMIN"
+            "role": "ADMIN",
         }
-        
+
         response = client.put(
             f"/api/users/{regular_user['username']}/",
             headers=admin_headers,
-            json=promote_data
+            json=promote_data,
         )
-        
+
         assert response.status_code == 204
-            
 
     def test_delete(self, client):
         """
@@ -422,10 +427,12 @@ class TestUserItem():
         response = client.delete(resource_url, headers=headers)
         assert response.status_code == 404
 
+
 class TestFeedbackCollection:
     """
     Tests for feedback collections via both user and insight paths
     """
+
     # URLs for testing different endpoints
     USER_FB_URL = "/api/users/testuser2/feedbacks/"
     INSIGHT_FB_URL = "/api/users/testuser2/insights/1/feedbacks/"
@@ -445,7 +452,7 @@ class TestFeedbackCollection:
         assert "up" in body["@controls"]
         assert "items" in body
         assert len(body["items"]) == 1
-        
+
         # Test invalid user path
         response = client.get(self.INVALID_USER_URL)
         assert response.status_code == 404
@@ -463,10 +470,10 @@ class TestFeedbackCollection:
         assert "up" in body["@controls"]
         assert "items" in body
         assert len(body["items"]) == 2
-        
+
         # Test controls for adding feedback (should be present in insight view)
         assert "geometa:add-feedback" in body["@controls"]
-        
+
         # Test invalid insight path
         response = client.get(self.INVALID_INSIGHT_URL)
         assert response.status_code == 404
@@ -478,25 +485,27 @@ class TestFeedbackCollection:
         # 1. Test invalid content type
         response = client.post(self.INSIGHT_FB_URL, data="not json")
         assert response.status_code == 415
-        
+
         # 2. Test non-existent insight
-        response = client.post(self.INVALID_INSIGHT_URL, json={"rating": 5, "comment": "Great insight!"})
+        response = client.post(
+            self.INVALID_INSIGHT_URL, json={"rating": 5, "comment": "Great insight!"}
+        )
         assert response.status_code == 404
-        
+
         # 3. Test successful anonymous feedback creation
         valid_feedback = {"rating": 5, "comment": "Great insight!"}
         response = client.post(self.INSIGHT_FB_URL, json=valid_feedback)
         assert response.status_code == 201
         assert "Location" in response.headers
         location = response.headers["Location"]
-        
+
         # Verify the feedback was created
         response = client.get(location)
         assert response.status_code == 200
         body = response.get_json()
         assert body["rating"] == 5
         assert body["comment"] == "Great insight!"
-        
+
         # 4. Test validation error handling
         invalid_feedback = {"rating": "nice", "comment": "Great insight!"}
         response = client.post(self.INSIGHT_FB_URL, json=invalid_feedback)
@@ -504,22 +513,19 @@ class TestFeedbackCollection:
         body = response.get_json()
         assert "@error" in body
         assert "Invalid input" in body["@error"]["@message"]
-        
+
         # 5. Test authenticated feedback creation
         api_key_info = get_api_key_header(client)
         headers = {"Authorization": api_key_info["Authorization"]}
         username = api_key_info["user"]
         user_feedback_url = f"/api/users/testuser2/insights/1/feedbacks/"
-        
-        auth_feedback = {
-            "rating": 4,
-            "comment": "Authenticated feedback test"
-        }
-        
+
+        auth_feedback = {"rating": 4, "comment": "Authenticated feedback test"}
+
         response = client.post(user_feedback_url, headers=headers, json=auth_feedback)
         assert response.status_code == 201
         location = response.headers["Location"]
-        
+
         # Verify authenticated feedback
         response = client.get(location)
         assert response.status_code == 200
@@ -528,15 +534,17 @@ class TestFeedbackCollection:
         assert "user" in body
         assert body["user"] == username
 
+
 class TestFeedbackItem:
     """
     Test cases for the FeedbackItem resource (GET, PUT, DELETE methods)
     with both user-specific and insight-specific paths
     """
+
     # User-specific feedback path
     USER_FB_URL = "/api/users/testuser1/feedbacks/2/"
     INVALID_USER_FB_URL = "/api/users/testuser1/feedbacks/999/"
-    
+
     # Insight-specific feedback path
     INSIGHT_FB_URL = "/api/users/testuser2/insights/1/feedbacks/1/"
     INVALID_INSIGHT_FB_URL = "/api/users/testuser2/insights/1/feedbacks/999/"
@@ -550,18 +558,21 @@ class TestFeedbackItem:
         assert "rating" in body
         assert "comment" in body
         assert body["comment"] == "Nice park, good for relaxing"
-        
+
         response = client.get(self.INSIGHT_FB_URL)
         assert response.status_code == 200
         body = response.get_json()
         assert body["@type"] == "feedback"
         assert "rating" in body
         assert "comment" in body
-        assert body["comment"] == "Really useful insight! I found this place because of you."
-        
+        assert (
+            body["comment"]
+            == "Really useful insight! I found this place because of you."
+        )
+
         response = client.get(self.INVALID_USER_FB_URL)
         assert response.status_code == 404
-        
+
         response = client.get(self.INVALID_INSIGHT_FB_URL)
         assert response.status_code == 404
 
@@ -569,24 +580,26 @@ class TestFeedbackItem:
         """Test updating feedback without proper authorization"""
         updated_feedback = {
             "rating": 2,
-            "comment": "Changed my mind, not so good after all"
+            "comment": "Changed my mind, not so good after all",
         }
-        
+
         response = client.put(self.USER_FB_URL, json=updated_feedback)
-        assert response.status_code == 403  
-        
+        assert response.status_code == 403
+
         response = client.put(self.INSIGHT_FB_URL, json=updated_feedback)
-        assert response.status_code == 403 
-        
+        assert response.status_code == 403
+
         api_key_info = get_api_key_header(client, 10)
         headers = {"Authorization": api_key_info["Authorization"]}
-        
+
         response = client.put(self.USER_FB_URL, headers=headers, json=updated_feedback)
-        assert response.status_code == 403 
-        
-        response = client.put(self.INSIGHT_FB_URL, headers=headers, json=updated_feedback)
-        assert response.status_code == 403 
-        
+        assert response.status_code == 403
+
+        response = client.put(
+            self.INSIGHT_FB_URL, headers=headers, json=updated_feedback
+        )
+        assert response.status_code == 403
+
         response = client.put(self.USER_FB_URL, headers=headers, data="not json")
         assert response.status_code in [403, 415]
 
@@ -598,38 +611,35 @@ class TestFeedbackItem:
             "email": "fbowner@example.com",
             "password": "password123",
             "first_name": "Feedback",
-            "last_name": "Owner"
+            "last_name": "Owner",
         }
         response = client.post("/api/users/", json=test_user)
         assert response.status_code == 201
         user_data = response.get_json()
         user_key = user_data["api_key"]
         headers = {"Authorization": f"Bearer {user_key}"}
-        
 
-        new_feedback = {
-            "rating": 5,
-            "comment": "Initial feedback to be updated"
-        }
-        insight_url = "/api/users/testuser1/insights/1/"  
-        response = client.post(f"{insight_url}feedbacks/", headers=headers, json=new_feedback)
+        new_feedback = {"rating": 5, "comment": "Initial feedback to be updated"}
+        insight_url = "/api/users/testuser1/insights/1/"
+        response = client.post(
+            f"{insight_url}feedbacks/", headers=headers, json=new_feedback
+        )
         assert response.status_code == 201
         feedback_url = response.headers["Location"]
-        
+
         updated_feedback = {
             "rating": 3,
-            "comment": "Changed my rating after revisiting"
+            "comment": "Changed my rating after revisiting",
         }
         response = client.put(feedback_url, headers=headers, json=updated_feedback)
-        assert response.status_code == 200 
-        
+        assert response.status_code == 200
 
         response = client.get(feedback_url)
         assert response.status_code == 200
         body = response.get_json()
         assert body["rating"] == 3
         assert body["comment"] == "Changed my rating after revisiting"
-        
+
         # 5. Test with invalid data
         invalid_feedback = {"rating": "not-a-number", "comment": "Invalid rating"}
         response = client.put(feedback_url, headers=headers, json=invalid_feedback)
@@ -639,15 +649,14 @@ class TestFeedbackItem:
         """Test deleting feedback without proper authorization"""
 
         response = client.delete(self.USER_FB_URL)
-        assert response.status_code == 403 
-        
+        assert response.status_code == 403
+
         response = client.delete(self.INSIGHT_FB_URL)
-        assert response.status_code == 403 
-        
+        assert response.status_code == 403
 
         api_key_info = get_api_key_header(client)
         headers = {"Authorization": api_key_info["Authorization"]}
-        
+
         response = client.delete(self.USER_FB_URL, headers=headers)
         assert response.status_code == 403
 
@@ -659,36 +668,31 @@ class TestFeedbackItem:
             "email": "fbdeleter@example.com",
             "password": "password123",
             "first_name": "Feedback",
-            "last_name": "Deleter"
+            "last_name": "Deleter",
         }
         response = client.post("/api/users/", json=test_user)
         assert response.status_code == 201
         user_data = response.get_json()
         user_key = user_data["api_key"]
         headers = {"Authorization": f"Bearer {user_key}"}
-        
 
-        new_feedback = {
-            "rating": 4,
-            "comment": "Feedback that will be deleted"
-        }
+        new_feedback = {"rating": 4, "comment": "Feedback that will be deleted"}
         insight_url = "/api/users/testuser1/insights/1/"
-        response = client.post(f"{insight_url}feedbacks/", headers=headers, json=new_feedback)
+        response = client.post(
+            f"{insight_url}feedbacks/", headers=headers, json=new_feedback
+        )
         assert response.status_code == 201
         feedback_url = response.headers["Location"]
-        
 
         response = client.delete(feedback_url, headers=headers)
-        assert response.status_code == 204 
-        
+        assert response.status_code == 204
 
         response = client.get(feedback_url)
         assert response.status_code == 404
-        
 
         response = client.delete(self.INVALID_USER_FB_URL, headers=headers)
         assert response.status_code == 404
-    
+
     def test_prepare_feedback_response(self, client):
         """Test the structure of feedback responses"""
 
@@ -700,7 +704,6 @@ class TestFeedbackItem:
         assert "@controls" in body
         assert "self" in body["@controls"]
         assert "profile" in body["@controls"]
-        
 
         response = client.get(self.INSIGHT_FB_URL)
         assert response.status_code == 200
@@ -710,8 +713,8 @@ class TestFeedbackItem:
         assert "@controls" in body
         assert "self" in body["@controls"]
         assert "profile" in body["@controls"]
-        assert "up" in body["@controls"] 
-    
+        assert "up" in body["@controls"]
+
     def test_feedback_owner_controls(self, client):
         """Test that feedback owners/admins get edit/delete controls"""
         # 1. Create a test user
@@ -720,61 +723,64 @@ class TestFeedbackItem:
             "email": "fbctrluser@example.com",
             "password": "password123",
             "first_name": "Control",
-            "last_name": "Tester"
+            "last_name": "Tester",
         }
         response = client.post("/api/users/", json=test_user)
         assert response.status_code == 201
         user_data = response.get_json()
         user_key = user_data["api_key"]
         auth_headers = {"Authorization": f"Bearer {user_key}"}
-        
-        new_feedback = {
-            "rating": 4,
-            "comment": "Testing owner controls"
-        }
+
+        new_feedback = {"rating": 4, "comment": "Testing owner controls"}
         response = client.post(
-            "/api/users/testuser1/insights/1/feedbacks/", 
-            headers=auth_headers, 
-            json=new_feedback
+            "/api/users/testuser1/insights/1/feedbacks/",
+            headers=auth_headers,
+            json=new_feedback,
         )
         assert response.status_code == 201
         insight_feedback_url = response.headers["Location"]
-        
-        feedback_id = insight_feedback_url.split('/')[-2]
-        
+
+        feedback_id = insight_feedback_url.split("/")[-2]
+
         user_feedback_url = f"/api/users/fbctrluser/feedbacks/{feedback_id}/"
-        
+
         # 5. Access as owner - should have edit/delete controls
         response = client.get(user_feedback_url, headers=auth_headers)
         assert response.status_code == 200
         body = response.get_json()
-        
+
         assert "edit" in body["@controls"]
-        assert "delete" in body["@controls"] 
-        
+        assert "delete" in body["@controls"]
+
         assert "collection" in body["@controls"]
         collection_link = body["@controls"]["collection"]["href"]
         assert collection_link.endswith("/api/users/fbctrluser/feedbacks/")
-        
+
         assert body["@controls"]["self"]["href"] == user_feedback_url
-        
+
         from geodata.models import create_admin
+
         app = client.application
         runner = app.test_cli_runner()
-        result = runner.invoke(create_admin, ["adminctrl", "adminctrl@example.com", "adminpass"])
+        result = runner.invoke(
+            create_admin, ["adminctrl", "adminctrl@example.com", "adminpass"]
+        )
         import re
-        api_key_match = re.search(r'API key: (\S+)', result.output)
+
+        api_key_match = re.search(r"API key: (\S+)", result.output)
         admin_key = api_key_match.group(1)
         admin_headers = {"Authorization": f"Bearer {admin_key}"}
-        
+
         response = client.get(user_feedback_url, headers=admin_headers)
         assert response.status_code == 200
         body = response.get_json()
         assert "edit" in body["@controls"]
         assert "delete" in body["@controls"]
 
+
 class TestInsightItem:
     """Tests for the InsightItem resource (GET, PUT, DELETE)"""
+
     RESOURCE_URL = "/api/insights/1/"
     INVALID_URL = "/api/insights/100/"
 
@@ -786,7 +792,6 @@ class TestInsightItem:
         body = response.get_json()
         assert body["@type"] == "insight"
         assert "title" in body and "longitude" in body and "latitude" in body
-        
 
         response = client.get(self.INVALID_URL)
         assert response.status_code == 404
@@ -798,13 +803,11 @@ class TestInsightItem:
             "description": "Updated Description",
             "longitude": 25.473,
             "latitude": 65.012,
-            "category": "Food & Drink"
+            "category": "Food & Drink",
         }
-        
 
         response = client.put(self.RESOURCE_URL, json=valid_insight)
         assert response.status_code == 401
-        
 
         api_key_info = get_api_key_header(client)
         headers = {"Authorization": api_key_info["Authorization"]}
@@ -819,14 +822,13 @@ class TestInsightItem:
             "email": "insightowner@example.com",
             "password": "password123",
             "first_name": "Insight",
-            "last_name": "Owner"
+            "last_name": "Owner",
         }
         response = client.post("/api/users/", json=test_user)
         assert response.status_code == 201
         user_data = response.get_json()
         user_key = user_data["api_key"]
         headers = {"Authorization": f"Bearer {user_key}"}
-        
 
         new_insight = {
             "title": "Owner's Test Insight",
@@ -834,43 +836,38 @@ class TestInsightItem:
             "longitude": 25.5,
             "latitude": 65.0,
             "category": "Test",
-            "subcategory": "Testing"
+            "subcategory": "Testing",
         }
-        
-        response = client.post(f"/api/users/insightowner/insights/", 
-                              headers=headers, 
-                              json=new_insight)
+
+        response = client.post(
+            f"/api/users/insightowner/insights/", headers=headers, json=new_insight
+        )
         assert response.status_code == 201
         insight_url = response.headers["Location"]
-        
 
         updated_insight = new_insight.copy()
         updated_insight["title"] = "Updated Owner's Insight"
         updated_insight["description"] = "Updated description"
-        
+
         response = client.put(insight_url, headers=headers, json=updated_insight)
         assert response.status_code == 200
-        
 
         response = client.get(insight_url)
         assert response.status_code == 200
         body = response.get_json()
         assert body["title"] == "Updated Owner's Insight"
         assert body["description"] == "Updated description"
-        
 
         response = client.put(insight_url, headers=headers, data="not json")
         assert response.status_code == 415
-        
+
         invalid_insight = updated_insight.copy()
         invalid_insight.pop("title")
         response = client.put(insight_url, headers=headers, json=invalid_insight)
         assert response.status_code == 400
-        
 
         response = client.delete(insight_url, headers=headers)
         assert response.status_code == 204
-        
 
         response = client.get(insight_url)
         assert response.status_code == 404
@@ -883,59 +880,56 @@ class TestInsightItem:
 
         api_key_info = get_api_key_header(client)
         headers = {"Authorization": api_key_info["Authorization"]}
-        
+
         response = client.delete(self.RESOURCE_URL, headers=headers)
         assert response.status_code == 403
 
-class TestInsightCollection():
+
+class TestInsightCollection:
     """
     Test for insights collection with filtering capabilities
     """
-    
+
     def test_get_with_filters(self, client):
         """
         Test getting insights with various query filters
         """
         response = client.get("/api/insights/")
-        assert response.status_code == 400 
-        
+        assert response.status_code == 400
 
         response = client.get("/api/insights/?bbox=25.4,65.0,25.5,65.1")
         assert response.status_code == 200
         body = response.get_json()
         assert "items" in body
         assert len(body["items"]) > 0
-        
 
         response = client.get("/api/insights/?usr=testuser1")
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 2
-        
 
         response = client.get("/api/insights/?usr=testuser1&ic=Food+%26+Drink")
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 1
         assert body["items"][0]["category"] == "Food & Drink"
-        
 
-        response = client.get("/api/insights/?bbox=0,0,90,90&ic=Infrastructure&isc=Parking")
+        response = client.get(
+            "/api/insights/?bbox=0,0,90,90&ic=Infrastructure&isc=Parking"
+        )
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 1
         assert body["items"][0]["category"] == "Infrastructure"
-        
 
         response = client.get("/api/insights/?bbox=invalid")
         assert response.status_code == 400
-        
 
         response = client.get("/api/insights/?usr=nonexistentuser")
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 0
-        
+
     def test_get_by_user_path(self, client):
         """
         Test getting insights via the user path
@@ -945,23 +939,22 @@ class TestInsightCollection():
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 2  # testuser1 has 2 insights
-        
+
         # Test getting insights by admin user
         response = client.get("/api/users/admin/insights/")
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 0  # admin has no insights
-        
+
         # Test getting insights by invalid user
         response = client.get("/api/users/nonexistentuser/insights/")
         assert response.status_code == 404
-        
+
         # Test with additional filters on user path
         response = client.get("/api/users/testuser1/insights/?ic=Infrastructure")
         assert response.status_code == 200
         body = response.get_json()
         assert len(body["items"]) == 1  # testuser1 has 1 Infrastructure insight
-
 
     def test_post(self, client):
         """
@@ -974,9 +967,9 @@ class TestInsightCollection():
             "longitude": 25.5,
             "latitude": 65.1,
             "category": "Anonymous",
-            "subcategory": "Testing"
+            "subcategory": "Testing",
         }
-        
+
         response = client.post("/api/insights/", json=anon_insight)
 
         assert response.status_code == 201
@@ -987,10 +980,9 @@ class TestInsightCollection():
         assert response.status_code == 200
         body = response.get_json()
         assert body["title"] == anon_insight["title"]
-        assert body["user"] is None  
-    
+        assert body["user"] is None
 
-        api_key_info = get_api_key_header(client, number= 7)  
+        api_key_info = get_api_key_header(client, number=7)
         headers = {"Authorization": api_key_info["Authorization"]}
         username = api_key_info["user"]
         user_insight = {
@@ -999,43 +991,38 @@ class TestInsightCollection():
             "longitude": 25.473,
             "latitude": 65.012,
             "category": "Testing",
-            "subcategory": "API"
+            "subcategory": "API",
         }
 
-        response = client.post(f"/api/users/{username}/insights/",
-                        json=user_insight)
+        response = client.post(f"/api/users/{username}/insights/", json=user_insight)
         assert response.status_code == 401
 
-        response = client.post(f"/api/users/testuser1/insights/",
-                              headers=headers, 
-                              json=user_insight)
+        response = client.post(
+            f"/api/users/testuser1/insights/", headers=headers, json=user_insight
+        )
         assert response.status_code == 403
-     
 
-        response = client.post(f"/api/users/{username}/insights/", 
-                              headers=headers, 
-                              json=user_insight)
+        response = client.post(
+            f"/api/users/{username}/insights/", headers=headers, json=user_insight
+        )
         assert response.status_code == 201
         assert "Location" in response.headers
         insight_url = response.headers["Location"]
-        
 
         response = client.get(insight_url)
         assert response.status_code == 200
         body = response.get_json()
         assert body["title"] == user_insight["title"]
         assert body["user"] == username
-        
 
         invalid_insight = user_insight.copy()
         invalid_insight.pop("title")
-        response = client.post(f"/api/users/{username}/insights/", 
-                              headers=headers, 
-                              json=invalid_insight)
+        response = client.post(
+            f"/api/users/{username}/insights/", headers=headers, json=invalid_insight
+        )
         assert response.status_code == 400
-        
 
-        response = client.post(f"/api/users/{username}/insights/", 
-                              headers=headers, 
-                              data="not json")
+        response = client.post(
+            f"/api/users/{username}/insights/", headers=headers, data="not json"
+        )
         assert response.status_code in [400, 415]

@@ -1,6 +1,7 @@
 """
 This module define shared utilities in app
 """
+
 import json
 from sqlalchemy import or_
 from werkzeug.exceptions import NotFound
@@ -25,8 +26,19 @@ class MasonBuilder(dict):
     """
 
     ALLOWED_PROPERTIES = {
-        "href", "isHrefTemplate", "title", "description", "method", "encoding",
-        "schema", "schemaUrl", "template", "accept", "output", "files", "alt"
+        "href",
+        "isHrefTemplate",
+        "title",
+        "description",
+        "method",
+        "encoding",
+        "schema",
+        "schemaUrl",
+        "template",
+        "accept",
+        "output",
+        "files",
+        "alt",
     }
 
     def add_error(self, title, details):
@@ -60,9 +72,7 @@ class MasonBuilder(dict):
         if "@namespaces" not in self:
             self["@namespaces"] = {}
 
-        self["@namespaces"][ns] = {
-            "name": uri
-        }
+        self["@namespaces"][ns] = {"name": uri}
 
     def add_control(self, ctrl_name, href, **kwargs):
         """
@@ -96,7 +106,7 @@ class MasonBuilder(dict):
         Utility method for adding POST type controls. The control is
         constructed from the method's parameters. Method and encoding are
         fixed to "POST" and "json" respectively.
-        
+
         : param str ctrl_name: name of the control (including namespace if any)
         : param str href: target URI for the control
         : param str title: human-readable title for the control
@@ -104,12 +114,7 @@ class MasonBuilder(dict):
         """
 
         self.add_control(
-            ctrl_name,
-            href,
-            method="POST",
-            encoding="json",
-            title=title,
-            schema=schema
+            ctrl_name, href, method="POST", encoding="json", title=title, schema=schema
         )
 
     def add_control_put(self, title, href, schema):
@@ -117,19 +122,14 @@ class MasonBuilder(dict):
         Utility method for adding PUT type controls. The control is
         constructed from the method's parameters. Control name, method and
         encoding are fixed to "edit", "PUT" and "json" respectively.
-        
+
         : param str href: target URI for the control
         : param str title: human-readable title for the control
         : param dict schema: a dictionary representing a valid JSON schema
         """
 
         self.add_control(
-            "edit",
-            href,
-            method="PUT",
-            encoding="json",
-            title=title,
-            schema=schema
+            "edit", href, method="PUT", encoding="json", title=title, schema=schema
         )
 
     def add_control_delete(self, title, href):
@@ -149,6 +149,7 @@ class MasonBuilder(dict):
             method="DELETE",
             title=title,
         )
+
 
 # https://github.com/enkwolf/pwp-course-sensorhub-api-example/blob/master/sensorhub/utils.py
 # From lnk above, class SensorhubBuilder is used as an example to implement our owm GeodataBuilder
@@ -171,7 +172,7 @@ class GeodataBuilder(MasonBuilder):
             isHrefTemplate=True,
             method="GET",
             title="Get all insights with optional filters",
-            description="Query parameters: bbox=25.4,65.0,25.6,65.1 | usr=username | ic=category | isc=subcategory"
+            description="Query parameters: bbox=25.4,65.0,25.6,65.1 | usr=username | ic=category | isc=subcategory",
         )
 
     def add_control_insights_by(self, user):
@@ -185,7 +186,7 @@ class GeodataBuilder(MasonBuilder):
                 url_for("api.insights_by", user=user),
                 method="GET",
                 title="Get all user related insights with optional filters",
-                description="Query parameters: bbox=25.4,65.0,25.6,65.1 | ic=category | isc=subcategory"
+                description="Query parameters: bbox=25.4,65.0,25.6,65.1 | ic=category | isc=subcategory",
             )
 
     def add_control_add_user(self):
@@ -196,7 +197,7 @@ class GeodataBuilder(MasonBuilder):
             "geometa:add-user",
             "Add a new user",
             url_for("api.users"),
-            schema=User.get_schema()
+            schema=User.get_schema(),
         )
 
     def add_control_add_insight(self, user=None):
@@ -212,7 +213,7 @@ class GeodataBuilder(MasonBuilder):
             "geometa:add-insight",
             "Add a new insight",
             href,
-            schema=Insight.get_schema()
+            schema=Insight.get_schema(),
         )
 
     def add_control_add_feedback(self, user, insight):
@@ -223,17 +224,14 @@ class GeodataBuilder(MasonBuilder):
             "geometa:add-feedback",
             "Add a new feedback",
             url_for("api.feedbacks_by_insight", user=user, insight=insight),
-            schema=Feedback.get_schema()
+            schema=Feedback.get_schema(),
         )
 
     def add_control_delete_user(self, user):
         """
         Add a control to delete a user
         """
-        self.add_control_delete(
-            "Delete this user", 
-            url_for("api.user", user=user)
-        )
+        self.add_control_delete("Delete this user", url_for("api.user", user=user))
 
     def add_control_delete_insight(self, user, insight):
         """
@@ -241,27 +239,22 @@ class GeodataBuilder(MasonBuilder):
         """
         if user:
             self.add_control_delete(
-                "Delete this insight", 
-                url_for("api.insight_by", user=user, insight=insight)
+                "Delete this insight",
+                url_for("api.insight_by", user=user, insight=insight),
             )
 
     def add_control_delete_feedback(self, fb_url):
         """
         Add a control to delete a feedback
         """
-        self.add_control_delete(
-            "Delete this feedback", 
-            fb_url
-        )
+        self.add_control_delete("Delete this feedback", fb_url)
 
     def add_control_edit_user(self, user):
         """
         Add a control to edit user
         """
         self.add_control_put(
-            "Edit this user",
-            url_for("api.user", user=user),
-            schema=User.get_schema()
+            "Edit this user", url_for("api.user", user=user), schema=User.get_schema()
         )
 
     def add_control_edit_insight(self, user, insight):
@@ -272,18 +265,14 @@ class GeodataBuilder(MasonBuilder):
             self.add_control_put(
                 "Edit this insight",
                 url_for("api.insight_by", user=user, insight=insight),
-                schema=Insight.get_schema()
+                schema=Insight.get_schema(),
             )
 
     def add_control_edit_feedback(self, fb_url):
         """
         Add a control to edit feedback
         """
-        self.add_control_put(
-            "Edit this feedback",
-            fb_url,
-            schema=Feedback.get_schema()
-        )
+        self.add_control_put("Edit this feedback", fb_url, schema=Feedback.get_schema())
 
     def add_control_insight_collection(self, user=None):
         """
@@ -298,7 +287,7 @@ class GeodataBuilder(MasonBuilder):
                 url_for("api.insights_by", user=user),
                 method="GET",
                 title="Get all user related insigths",
-                description="Fetches all insights created by the specified user. Optional query parameters: bbox, ic, isc"
+                description="Fetches all insights created by the specified user. Optional query parameters: bbox, ic, isc",
             )
         else:
             self.add_control(
@@ -306,7 +295,7 @@ class GeodataBuilder(MasonBuilder):
                 url_for("api.insights"),
                 method="GET",
                 title="Get all insigths",
-                description="Fetches all insights. Optional query parameters: bbox, usr, ic, isc"
+                description="Fetches all insights. Optional query parameters: bbox, usr, ic, isc",
             )
 
     def add_control_feedback_collection(self, user, authuser=None, insight=None):
@@ -322,7 +311,7 @@ class GeodataBuilder(MasonBuilder):
                 url_for("api.feedbacks_by_user", user=user),
                 method="GET",
                 title="Get all feedbacks by user",
-                description="Fetches all feedbacks submitted by the authenticated user."
+                description="Fetches all feedbacks submitted by the authenticated user.",
             )
 
         if user and insight:
@@ -331,7 +320,7 @@ class GeodataBuilder(MasonBuilder):
                 url_for("api.feedbacks_by_insight", user=user, insight=insight),
                 method="GET",
                 title="Get all feedbacks for insight",
-                description="Fetches all feedbacks related to this specific insight."
+                description="Fetches all feedbacks related to this specific insight.",
             )
 
     def add_control_user_collection(self):
@@ -343,7 +332,7 @@ class GeodataBuilder(MasonBuilder):
             url_for("api.users"),
             method="GET",
             title="Get all users",
-            description="Fetches the list of all registered users."
+            description="Fetches the list of all registered users.",
         )
 
     @staticmethod
@@ -370,7 +359,7 @@ class GeodataBuilder(MasonBuilder):
                 href=url_for("api.users"),  # Could point to login endpoint
                 method="POST",
                 encoding="json",
-                title="Authenticate with API key"
+                title="Authenticate with API key",
             )
 
         if status_code == 403:
@@ -383,6 +372,7 @@ class GeodataBuilder(MasonBuilder):
 
         return Response(json.dumps(builder), status=status_code, mimetype=MASON)
 
+
 class UserConverter(BaseConverter):
     """
     A URL converter for the User model. This converter is used to convert
@@ -392,7 +382,9 @@ class UserConverter(BaseConverter):
     """
 
     def to_python(self, value):
-        db_user = User.query.filter(or_(User.username == value, User.email == value)).first()
+        db_user = User.query.filter(
+            or_(User.username == value, User.email == value)
+        ).first()
         if db_user is None:
             raise NotFound
         return db_user
@@ -410,13 +402,14 @@ class InsightConverter(BaseConverter):
     """
 
     def to_python(self, value):
-        db_insight = Insight.query.filter_by(id = value).first()
+        db_insight = Insight.query.filter_by(id=value).first()
         if db_insight is None:
             raise NotFound
         return db_insight
 
     def to_url(self, value):
         return str(value.id)
+
 
 class FeedbackConverter(BaseConverter):
     """
@@ -427,7 +420,7 @@ class FeedbackConverter(BaseConverter):
     """
 
     def to_python(self, value):
-        db_feedback = Feedback.query.filter_by(id = value).first()
+        db_feedback = Feedback.query.filter_by(id=value).first()
         if db_feedback is None:
             raise NotFound
         return db_feedback

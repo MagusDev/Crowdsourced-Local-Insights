@@ -1,6 +1,7 @@
 """
 This module set up tools for app.
 """
+
 from setuptools import find_packages, setup
 
 setup(
@@ -18,6 +19,6 @@ setup(
         "jsonschema",
         "flasgger",
         "rfc3339-validator",
-        "flask-caching"
-    ]
+        "flask-caching",
+    ],
 )

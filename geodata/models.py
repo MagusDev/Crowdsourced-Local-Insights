@@ -1,6 +1,7 @@
 """
 This module define app models.
 """
+
 import enum
 import hashlib
 import secrets
@@ -14,6 +15,7 @@ import io
 import base64
 import geodata.constants
 
+
 # Enum classes for status and role (ChatGPT used for implementing this ENUM functionality)
 class StatusEnum(enum.Enum):
     """
@@ -24,6 +26,7 @@ class StatusEnum(enum.Enum):
     INACTIVE = "INACTIVE"
     BANNED = "BANNED"
 
+
 class RoleEnum(enum.Enum):
     """
     Enum class for user role.
@@ -31,6 +34,7 @@ class RoleEnum(enum.Enum):
 
     USER = "USER"
     ADMIN = "ADMIN"
+
 
 class User(db.Model):
     """
@@ -46,14 +50,12 @@ class User(db.Model):
     last_name = db.Column(db.String(32), nullable=True)
     created_date = db.Column(db.DateTime, default=db.func.now(), nullable=False)
     modified_date = db.Column(
-        db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False)
+        db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False
+    )
     status = db.Column(db.String, nullable=False, default="ACTIVE")  # Stored as string
-    role = db.Column(
-        db.String, nullable=False, default="USER")  # Stored as string
-    profile_picture = db.Column(
-        db.String, nullable=True)
-    profile_picture_thumb = db.Column(
-        db.String, nullable=True)
+    role = db.Column(db.String, nullable=False, default="USER")  # Stored as string
+    profile_picture = db.Column(db.String, nullable=True)
+    profile_picture_thumb = db.Column(db.String, nullable=True)
 
     # Relationship with Insight and Feedback
     insight = db.relationship("Insight", back_populates="user")
@@ -68,20 +70,26 @@ class User(db.Model):
             "last_name": self.last_name,
             "status": self.status,
             "role": self.role,
-            "profile_picture_thumb": self.profile_picture_thumb
+            "profile_picture_thumb": self.profile_picture_thumb,
         }
 
         if short_form:
             return data
 
         # Full serialization
-        data.update({
-            "email": self.email,
-            "phone": self.phone,
-            "created_date": self.created_date.isoformat() if self.created_date else None,
-            "modified_date": self.modified_date.isoformat() if self.modified_date else None,
-            "profile_picture": self.profile_picture
-        })
+        data.update(
+            {
+                "email": self.email,
+                "phone": self.phone,
+                "created_date": (
+                    self.created_date.isoformat() if self.created_date else None
+                ),
+                "modified_date": (
+                    self.modified_date.isoformat() if self.modified_date else None
+                ),
+                "profile_picture": self.profile_picture,
+            }
+        )
 
         return data
 
@@ -116,7 +124,6 @@ class User(db.Model):
 
         return RoleEnum[self.role]
 
-
     def set_status(self, status_enum):
         """
         Set the status of the user.
@@ -139,16 +146,14 @@ class User(db.Model):
     def is_owner_or_admin(self, other_user_id):
         return self.id == other_user_id or self.is_admin()
 
-
-
     @staticmethod
     def get_schema():
         """
         Return the schema for user
         """
         schema = {
-            "type" : "object",
-            "required" : ["username", "email", "password", "first_name"]
+            "type": "object",
+            "required": ["username", "email", "password", "first_name"],
         }
         props = schema["properties"] = {}
         props["username"] = {"type": "string"}
@@ -161,7 +166,7 @@ class User(db.Model):
         props["role"] = {"type": "string", "enum": ["USER", "ADMIN"]}
         props["profile_picture"] = {"type": "string"}
         return schema
-    
+
     @staticmethod
     def generate_thumbnail(image_data_base64, size=(64, 64)):
         image_data = base64.b64decode(image_data_base64)
@@ -178,32 +183,42 @@ class Insight(db.Model):
     """
     Insight model class.
     """
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     title = db.Column(db.String(128), nullable=False)
-    description = db.Column(db.String(1024) )
+    description = db.Column(db.String(1024))
     longitude = db.Column(
         db.Float,
-        db.CheckConstraint('longitude>=-180 AND longitude <= 180', name = 'longitude_range_check'),
-        nullable=False)
+        db.CheckConstraint(
+            "longitude>=-180 AND longitude <= 180", name="longitude_range_check"
+        ),
+        nullable=False,
+    )
     latitude = db.Column(
         db.Float,
-        db.CheckConstraint('latitude>=-90 AND latitude <= 90', name = 'latitude_range_check'),
-        nullable = False)
+        db.CheckConstraint(
+            "latitude>=-90 AND latitude <= 90", name="latitude_range_check"
+        ),
+        nullable=False,
+    )
     image = db.Column(db.String(128))
-    created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
-    modified_date =  db.Column(
-        db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
-    creator = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
+    created_date = db.Column(db.DateTime, default=db.func.now(), nullable=False)
+    modified_date = db.Column(
+        db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False
+    )
+    creator = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"))
     category = db.Column(db.String(64))
     # Restriction - subcategory should be empty when there's no category
     subcategory = db.Column(
         db.String(64),
         db.CheckConstraint(
-            'subcategory IS NULL AND category IS NULL OR subcategory IS NOT NULL ',
-              name="subcategory_check"))
+            "subcategory IS NULL AND category IS NULL OR subcategory IS NOT NULL ",
+            name="subcategory_check",
+        ),
+    )
     external_link = db.Column(db.String(512))
     address = db.Column(db.String(128))
-    user = db.relationship('User', back_populates='insight', uselist=False)
+    user = db.relationship("User", back_populates="insight", uselist=False)
     feedback = db.relationship("Feedback", back_populates="insight")
 
     def serialize(self, short_form=False):
@@ -218,19 +233,23 @@ class Insight(db.Model):
             "latitude": self.latitude,
             "category": self.category,
             "created_date": self.created_date.isoformat(),
-            "user": self.user.username if self.user else None
+            "user": self.user.username if self.user else None,
         }
 
         if not short_form:
-            data.update({
-                "description": self.description,
-                "subcategory": self.subcategory,
-                "image": self.image,
-                "modified_date": self.modified_date.isoformat() if self.modified_date else None,
-                "external_link": self.external_link,
-                "address": self.address,
-                "average_rating": average_rating,
-            })
+            data.update(
+                {
+                    "description": self.description,
+                    "subcategory": self.subcategory,
+                    "image": self.image,
+                    "modified_date": (
+                        self.modified_date.isoformat() if self.modified_date else None
+                    ),
+                    "external_link": self.external_link,
+                    "address": self.address,
+                    "average_rating": average_rating,
+                }
+            )
 
         return data
 
@@ -239,10 +258,7 @@ class Insight(db.Model):
         """
         Return the schema for insight
         """
-        schema = {
-            "type" : "object",
-            "required" : ["title", "longitude", "latitude"]
-        }
+        schema = {"type": "object", "required": ["title", "longitude", "latitude"]}
         props = schema["properties"] = {}
         props["title"] = {"type": "string"}
         props["description"] = {"type": "string"}
@@ -255,24 +271,28 @@ class Insight(db.Model):
         props["external_link"] = {"type": "string"}
         return schema
 
+
 class Feedback(db.Model):
     """
     Feedback model class.
     """
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id',  ondelete="SET NULL"))
-    insight_id = db.Column(db.Integer, db.ForeignKey('insight.id', ondelete="CASCADE"))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"))
+    insight_id = db.Column(db.Integer, db.ForeignKey("insight.id", ondelete="CASCADE"))
     rating = db.Column(
         db.Integer,
-        db.CheckConstraint("rating BETWEEN 1 AND 5 OR rating IS NULL", name="check_rating_range"),
-        nullable=True
+        db.CheckConstraint(
+            "rating BETWEEN 1 AND 5 OR rating IS NULL", name="check_rating_range"
+        ),
+        nullable=True,
     )
     comment = db.Column(db.String(512), nullable=True)
 
-    created_date = db.Column(db.DateTime, default = db.func.now(), nullable = False)
-    modified_date =  db.Column(
-        db.DateTime, default = db.func.now(), onupdate = db.func.now(), nullable = False)
+    created_date = db.Column(db.DateTime, default=db.func.now(), nullable=False)
+    modified_date = db.Column(
+        db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False
+    )
 
     user = db.relationship("User", back_populates="feedback", uselist=False)
     insight = db.relationship("Insight", back_populates="feedback")
@@ -285,8 +305,12 @@ class Feedback(db.Model):
             "comment": self.comment,
             "user": self.user.username if self.user else None,
             "insight": self.insight.id if self.insight else None,
-            "created_date": self.created_date.isoformat() if self.created_date else None,
-            "modified_date": self.modified_date.isoformat() if self.modified_date else None,
+            "created_date": (
+                self.created_date.isoformat() if self.created_date else None
+            ),
+            "modified_date": (
+                self.modified_date.isoformat() if self.modified_date else None
+            ),
         }
 
     @staticmethod
@@ -295,7 +319,7 @@ class Feedback(db.Model):
         Return the schema for the feedback
         """
         schema = {
-            "type" : "object",
+            "type": "object",
         }
         props = schema["properties"] = {}
         props["rating"] = {"type": "number"}
@@ -304,13 +328,13 @@ class Feedback(db.Model):
 
 
 class ApiKey(db.Model):
-    
+
     key = db.Column(db.String(32), nullable=False, unique=True, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    admin =  db.Column(db.Boolean, default=False)
-    
+    admin = db.Column(db.Boolean, default=False)
+
     user = db.relationship("User", back_populates="api_key", uselist=False)
-    
+
     @staticmethod
     def key_hash(key):
         return hashlib.sha256(key.encode()).digest()
@@ -321,9 +345,10 @@ class ApiKey(db.Model):
 def init_db_command():
     """Clear existing data and create new tables."""
     click.echo("Initializing the database...")
-    #db.drop_all()
+    # db.drop_all()
     db.create_all()
     click.echo("Database initialized successfully!")
+
 
 @click.command("populate-db")
 @with_appcontext
@@ -337,10 +362,10 @@ def populate_db_command():
         first_name="Admin",
         last_name="User",
         phone=1234567890,
-        status="ACTIVE"
+        status="ACTIVE",
     )
     admin.set_role(RoleEnum.ADMIN)
-    
+
     user = User(
         username="user_test",
         email="user@example.com",
@@ -348,13 +373,13 @@ def populate_db_command():
         first_name="Regular",
         last_name="User",
         phone=9876543210,
-        status="ACTIVE"
+        status="ACTIVE",
     )
     user.set_role(RoleEnum.USER)
-    
+
     db.session.add_all([admin, user])
     db.session.flush()
-    
+
     # Create sample insights
     insight1 = Insight(
         title="Coffee Shop",
@@ -364,9 +389,9 @@ def populate_db_command():
         category="Food & Drink",
         subcategory="Cafe",
         address="123 Main St",
-        creator=user.id
+        creator=user.id,
     )
-    
+
     insight2 = Insight(
         title="City Park",
         description="Beautiful park with walking trails",
@@ -375,23 +400,23 @@ def populate_db_command():
         category="Recreation",
         subcategory="Parks",
         address="456 Park Ave",
-        creator=admin.id
+        creator=admin.id,
     )
-    
+
     db.session.add_all([insight1, insight2])
     db.session.flush()
-    
+
     # Create sample feedback
     feedback = Feedback(
         user_id=user.id,
         insight_id=insight2.id,
         rating=5,
-        comment="This park is amazing! Perfect for picnics."
+        comment="This park is amazing! Perfect for picnics.",
     )
-    
+
     db.session.add(feedback)
     db.session.commit()
-    
+
     # Create API key for admin
     api_key_str = secrets.token_urlsafe(32)
     api_key = ApiKey(
@@ -401,11 +426,12 @@ def populate_db_command():
     )
     db.session.add(api_key)
     db.session.commit()
-    
+
     click.echo("Database populated with sample data!")
     click.echo(f"Admin user created with username: admin_test, password: adminpass")
     click.echo(f"Regular user created with username: user_test, password: userpass")
     click.echo(f"Admin API key: {api_key_str}")
+
 
 @click.command("create-admin")
 @click.argument("username")
@@ -422,16 +448,16 @@ def create_admin(username, email, password):
     )
     user.set_role(RoleEnum.ADMIN)
     db.session.add(user)
-    db.session.flush() 
-    
+    db.session.flush()
+
     # Create admin API key
     api_key_str = secrets.token_urlsafe(32)
     api_key = ApiKey(
-        user_id=user.id,  
+        user_id=user.id,
         key=ApiKey.key_hash(api_key_str),
         admin=True,
     )
     db.session.add(api_key)
     db.session.commit()
     print(f"Admin created. API key: {api_key_str}")
-    return api_key_str  
+    return api_key_str

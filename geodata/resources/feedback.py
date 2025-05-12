@@ -1,17 +1,20 @@
 """
 This module define resource for feedback.
 """
+
 import json
 from flask_restful import Resource
-from flask import url_for,Response, request
+from flask import url_for, Response, request
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 from geodata.models import Feedback, db
 from geodata.utils import GeodataBuilder
 from geodata.auth import get_authenticated_user
 from geodata.constants import *
+
 draft7_format_checker = Draft7Validator.FORMAT_CHECKER
 from geodata import cache
+
 
 class FeedbackCollection(Resource):
     """
@@ -32,7 +35,9 @@ class FeedbackCollection(Resource):
 
         if insight:
             feedbacks = Feedback.query.filter_by(insight_id=insight.id).all()
-            body.add_control("self", url_for("api.feedbacks_by_insight", user=user, insight=insight))
+            body.add_control(
+                "self", url_for("api.feedbacks_by_insight", user=user, insight=insight)
+            )
             body.add_control("up", url_for("api.insight", user=user, insight=insight))
         else:
             feedbacks = Feedback.query.filter_by(user_id=user.id).all()
@@ -44,21 +49,24 @@ class FeedbackCollection(Resource):
             item = GeodataBuilder(feedback.serialize())
             item["@type"] = "feedback"
             if insight:
-                item.add_control("self", url_for("api.feedback_by_insight",
-                                                 user=user,
-                                                 insight=insight,
-                                                 feedback=feedback)
-                                )
+                item.add_control(
+                    "self",
+                    url_for(
+                        "api.feedback_by_insight",
+                        user=user,
+                        insight=insight,
+                        feedback=feedback,
+                    ),
+                )
             else:
-                item.add_control("self", url_for("api.feedback_by_user",
-                                                 user=user,
-                                                 feedback=feedback)
-                                )
+                item.add_control(
+                    "self",
+                    url_for("api.feedback_by_user", user=user, feedback=feedback),
+                )
             item.add_control("profile", href=FEEDBACK_PROFILE_URL)
             body["items"].append(item)
 
         return Response(json.dumps(body), 200, mimetype=MASON)
-
 
     def post(self, user, insight):
         """
@@ -67,8 +75,7 @@ class FeedbackCollection(Resource):
 
         if request.content_type != "application/json":
             return GeodataBuilder.create_error_response(
-                415,
-                "Content-Type must be application/json."
+                415, "Content-Type must be application/json."
             )
 
         try:
@@ -82,7 +89,7 @@ class FeedbackCollection(Resource):
         new_feedback = Feedback(
             insight_id=insight.id,
             rating=data.get("rating"),
-            comment=data.get("comment")
+            comment=data.get("comment"),
         )
 
         if current_user:
@@ -97,10 +104,12 @@ class FeedbackCollection(Resource):
         )
         return response
 
+
 class FeedbackItem(Resource):
     """
     Resource for handling feedback item by user and insight.
     """
+
     @cache.cached()
     def get(self, user, feedback, insight=None):
         """
@@ -119,7 +128,6 @@ class FeedbackItem(Resource):
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-
     def put(self, user, feedback, insight=None):
         """
         Update an existing feedback.
@@ -130,16 +138,14 @@ class FeedbackItem(Resource):
 
         if not current_user or not current_user.is_owner_or_admin(feedback.user_id):
             return GeodataBuilder.create_error_response(
-                403,
-                "You are not authorized to update this feedback."
+                403, "You are not authorized to update this feedback."
             )
-        
+
         if request.content_type != "application/json":
             return GeodataBuilder.create_error_response(
-                415,
-                "Content-Type must be application/json."
+                415, "Content-Type must be application/json."
             )
-        
+
         try:
             data = request.get_json()
             validate(data, Feedback.get_schema(), format_checker=draft7_format_checker)
@@ -157,7 +163,6 @@ class FeedbackItem(Resource):
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-
     def delete(self, user, feedback, insight=None):
         """
         Delete a feedback.
@@ -168,8 +173,7 @@ class FeedbackItem(Resource):
 
         if not current_user or not current_user.is_owner_or_admin(feedback.user_id):
             return GeodataBuilder.create_error_response(
-                403,
-                "You are not authorized to delete this feedback."
+                403, "You are not authorized to delete this feedback."
             )
 
         # remoced the try except block for error 500
@@ -179,9 +183,7 @@ class FeedbackItem(Resource):
 
         db.session.rollback()
 
-
         return Response(status=204)
-    
 
     def prepare_feedback_response(self, user, feedback, current_user, insight=None):
         body = GeodataBuilder()
@@ -192,40 +194,26 @@ class FeedbackItem(Resource):
                     "api.feedback_by_insight",
                     user=user,
                     insight=feedback,
-                    feedback=feedback
+                    feedback=feedback,
                 )
                 # self refers to insight's feedbackcollection
                 collection_url = url_for(
-                    "api.feedbacks_by_insight",
-                    user=user,
-                    insight=feedback.insight
+                    "api.feedbacks_by_insight", user=user, insight=feedback.insight
                 )
             else:
                 # self refers to user's feedback when owner/admin
-                self_url = url_for(
-                    "api.feedback_by_user",
-                    user=user,
-                    feedback=feedback
-                )
+                self_url = url_for("api.feedback_by_user", user=user, feedback=feedback)
                 # up refers to user's feedbackcollection when owner/admin
-                collection_url = url_for(
-                    "api.feedbacks_by_user",
-                    user=user
-                )
+                collection_url = url_for("api.feedbacks_by_user", user=user)
                 # controls for editing or deleting feedback when owner/admin
                 body.add_control_delete_feedback(self_url)
                 body.add_control_edit_feedback(self_url)
         else:
             self_url = url_for(
-                "api.feedback_by_insight",
-                user=user,
-                insight=insight,
-                feedback=feedback
+                "api.feedback_by_insight", user=user, insight=insight, feedback=feedback
             )
             collection_url = url_for(
-                "api.feedbacks_by_insight",
-                user=user,
-                insight=insight
+                "api.feedbacks_by_insight", user=user, insight=insight
             )
 
         body.update(feedback.serialize())
@@ -237,5 +225,5 @@ class FeedbackItem(Resource):
         body.add_control("up", url_for("api.insight", insight=feedback.insight))
         if feedback.user:
             body.add_control("author", url_for("api.user", user=feedback.user))
-        
+
         return body

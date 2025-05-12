@@ -4,7 +4,7 @@ This module define resource for user.
 
 import json
 from flask import Response, request
-from flask import  url_for
+from flask import url_for
 import flask_restful
 from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError, Draft7Validator
@@ -49,7 +49,7 @@ class UserCollection(flask_restful.Resource):
     def post(self):
         """
         Register a new user with a unique username and email.
-        Validates request body against user schema, hashes the password, 
+        Validates request body against user schema, hashes the password,
         creates a default API key, and returns the created user in Mason format.
         """
 
@@ -62,8 +62,10 @@ class UserCollection(flask_restful.Resource):
         except ValidationError as e:
             raise BadRequest(description=str(e)) from e
 
-        if User.query.filter_by(
-            email=data["email"]).first() or User.query.filter_by(username=data["username"]).first():
+        if (
+            User.query.filter_by(email=data["email"]).first()
+            or User.query.filter_by(username=data["username"]).first()
+        ):
             raise Conflict("Username or email already exists.")
 
         # Create new User
@@ -73,11 +75,10 @@ class UserCollection(flask_restful.Resource):
             password=User.hash_password(data["password"]),
             # phone=data["phone"],
             first_name=data["first_name"],
-            last_name=data.get("last_name", "")
+            last_name=data.get("last_name", ""),
         )
 
         api_key_str = secrets.token_urlsafe(32)
-
 
         # Add user to session
         db.session.add(new_user)
@@ -87,21 +88,21 @@ class UserCollection(flask_restful.Resource):
         api_key = ApiKey(
             user_id=new_user.id,
             key=ApiKey.key_hash(api_key_str),
-            admin= False,
+            admin=False,
         )
         db.session.add(api_key)
 
-            # Commit both in one transaction
+        # Commit both in one transaction
         db.session.commit()
         # This was not called throught tests
-#        except IntegrityError:
-#            db.session.rollback()
-#            return GeodataBuilder.create_error_response(409, "Database integrity error.")
+        #        except IntegrityError:
+        #            db.session.rollback()
+        #            return GeodataBuilder.create_error_response(409, "Database integrity error.")
 
         body = GeodataBuilder(
-            id = new_user.id,
-            username = new_user.username,
-            email = new_user.email,
+            id=new_user.id,
+            username=new_user.username,
+            email=new_user.email,
         )
         body["@type"] = "user"
         body["api_key"] = api_key_str
@@ -110,6 +111,7 @@ class UserCollection(flask_restful.Resource):
         response = Response(json.dumps(body), 201, mimetype=MASON)
         response.headers["Location"] = url_for("api.user", user=new_user)
         return response
+
 
 class UserItem(flask_restful.Resource):
     """Resource for handling individual users"""
@@ -145,7 +147,6 @@ class UserItem(flask_restful.Resource):
 
         return Response(json.dumps(body), 200, mimetype=MASON)
 
-
     def put(self, user):
         """
         Update a user's data.
@@ -158,15 +159,13 @@ class UserItem(flask_restful.Resource):
         # Check permissions
         if not current_user or not current_user.is_owner_or_admin(user.id):
             return GeodataBuilder.create_error_response(
-                403,
-                "You are not authorized to update this user."
+                403, "You are not authorized to update this user."
             )
 
         # Validate content type
         if request.content_type != "application/json":
             return GeodataBuilder.create_error_response(
-                415,
-                "Content-Type must be application/json."
+                415, "Content-Type must be application/json."
             )
 
         # Parse and validate JSON payload
@@ -176,12 +175,20 @@ class UserItem(flask_restful.Resource):
         except ValidationError as e:
             return GeodataBuilder.create_error_response(400, f"Invalid input: {str(e)}")
         except Exception:
-            return GeodataBuilder.create_error_response(400, "Malformed JSON or request body.")
+            return GeodataBuilder.create_error_response(
+                400, "Malformed JSON or request body."
+            )
 
         # Base fields allowed for all users
         allowed_fields = [
-            "username", "email", "phone", "password", "first_name",
-            "last_name", "profile_picture", "status"
+            "username",
+            "email",
+            "phone",
+            "password",
+            "first_name",
+            "last_name",
+            "profile_picture",
+            "status",
         ]
         if current_user.is_admin():
             allowed_fields.extend(["role"])  # Only admins can update role
@@ -193,7 +200,11 @@ class UserItem(flask_restful.Resource):
                 elif field == "status":
                     user.set_status(StatusEnum[data["status"].upper()])
                 elif field == "role":
-                    if current_user.id == user.id and user.role == "ADMIN" and data["role"].upper() != "ADMIN":
+                    if (
+                        current_user.id == user.id
+                        and user.role == "ADMIN"
+                        and data["role"].upper() != "ADMIN"
+                    ):
                         return GeodataBuilder.create_error_response(
                             400, "You cannot remove your own admin rights."
                         )
@@ -206,8 +217,7 @@ class UserItem(flask_restful.Resource):
         except IntegrityError as e:
             db.session.rollback()
             return GeodataBuilder.create_error_response(
-                409,
-                f"Database conflict: {str(e.orig)}"
+                409, f"Database conflict: {str(e.orig)}"
             )
 
         # Build Mason-formatted response with updated user data
@@ -220,7 +230,6 @@ class UserItem(flask_restful.Resource):
 
         return Response(json.dumps(body), 204, mimetype=MASON)
 
-
     def delete(self, user):
         """
         Delete a user by username.
@@ -231,10 +240,8 @@ class UserItem(flask_restful.Resource):
 
         if not current_user or not current_user.is_owner_or_admin(user.id):
             return GeodataBuilder.create_error_response(
-                403,
-                "You are not authorized to deactivate this user."
+                403, "You are not authorized to deactivate this user."
             )
-
 
         db.session.delete(user)
         db.session.commit()

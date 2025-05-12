@@ -1,10 +1,12 @@
 """
 This module is used to prepare database for test environment.
 """
+
 from datetime import datetime
 
 from geodata import create_app, db
 from geodata.models import User, Insight, Feedback
+
 
 def create_test_users():
     """
@@ -19,7 +21,7 @@ def create_test_users():
             last_name="User",
             phone=1234567890,
             status="active",
-            role="admin"
+            role="admin",
         ),
         User(
             username="user1",
@@ -29,10 +31,11 @@ def create_test_users():
             last_name="User",
             phone=9876543210,
             status="active",
-            role="user"
-        )
+            role="user",
+        ),
     ]
     return users
+
 
 def create_test_insights(user):
     """
@@ -49,7 +52,7 @@ def create_test_insights(user):
             address="123 Coffee Street",
             created_date=datetime.utcnow(),
             modified_date=datetime.utcnow(),
-            creator=user.id
+            creator=user.id,
         ),
         Insight(
             title="Beautiful Park",
@@ -59,12 +62,13 @@ def create_test_insights(user):
             category="Recreation",
             subcategory="Parks",
             address="456 Park Avenue",
-            created_date= datetime.utcnow(),
-            modified_date= datetime.utcnow(),
-            creator=user.id
-        )
+            created_date=datetime.utcnow(),
+            modified_date=datetime.utcnow(),
+            creator=user.id,
+        ),
     ]
     return insights
+
 
 def create_test_feedback(user, insight):
     """
@@ -74,9 +78,10 @@ def create_test_feedback(user, insight):
         user_id=user.id,
         insight_id=insight.id,
         rating=5,
-        comment="This place is amazing!"
+        comment="This place is amazing!",
     )
     return feedback
+
 
 def test_database():
     """
@@ -87,18 +92,15 @@ def test_database():
         db.drop_all()
         db.create_all()
 
-
         users = create_test_users()
         for user in users:
             db.session.add(user)
         db.session.commit()
 
-
         insights = create_test_insights(users[0])
         for insight in insights:
             db.session.add(insight)
         db.session.commit()
-
 
         feedback = create_test_feedback(users[1], insights[0])
         db.session.add(feedback)
@@ -114,8 +116,11 @@ def test_database():
 
         print("\nFeedback in database:")
         for feedback in Feedback.query.all():
-            print(f"- Rating {feedback.rating} by user "
-                  f"{feedback.user_id} for insight {feedback.insight_id}")
+            print(
+                f"- Rating {feedback.rating} by user "
+                f"{feedback.user_id} for insight {feedback.insight_id}"
+            )
+
 
 if __name__ == "__main__":
     test_database()

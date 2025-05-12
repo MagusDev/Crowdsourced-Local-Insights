@@ -1,6 +1,7 @@
 """
 This module init app and sets up the db.
 """
+
 import os
 import yaml
 from flasgger import Swagger
@@ -11,6 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 cache = Cache()
+
 
 def create_app(test_config=None):
     """
@@ -25,7 +27,7 @@ def create_app(test_config=None):
             "title": "Crowdsourced local insights API",
             "openapi": "3.0.0",
             "uiversion": 3,
-            "doc_dir": "./geodata/doc"
+            "doc_dir": "./geodata/doc",
         }
         Swagger(app, template_file="doc/swagger_base.yml")
     else:
@@ -35,7 +37,6 @@ def create_app(test_config=None):
     app.config["CACHE_DIR"] = os.path.join(app.instance_path, "cache")
     db.init_app(app)
     cache.init_app(app)
-
 
     from .utils import UserConverter, InsightConverter, FeedbackConverter
     from geodata.api_init import api_bp
@@ -54,7 +55,7 @@ def create_app(test_config=None):
     @app.route("/profiles/<resource>/")
     def send_profile_html(resource):
         return send_from_directory(app.static_folder, "{}.html".format(resource))
-    
+
     @app.route("/geodata/link-relations/")
     def send_link_relations_html():
         return send_from_directory(app.static_folder, "links-relations.html")
