@@ -110,3 +110,43 @@ the errors solved by tests:
 1. Converter configrations for long urls
 2. Integrity errors for put commands
 3. Authentication issues for users
+
+# Deployment
+
+This application can be deployed using Docker and Docker Compose, which provides an isolated and consistent environment for running the application.
+
+## Prerequisites
+
+- Docker: [Install Docker](https://docs.docker.com/get-docker/)
+- Docker Compose: [Install Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop for Windows and Mac)
+
+## Deployment Steps
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/MagusDev/Crowdsourced-Local-Insights.git
+cd Crowdsourced-Local-Insights
+```
+
+### 2. Build and Start the Docker Containers
+
+```bash
+docker-compose up --build
+```
+
+This command builds the Docker image and starts the containers defined in the docker-compose.yml file. The application will be accessible at http://localhost:80.
+
+To run the containers in the background (detached mode):
+
+```bash
+docker-compose up --build -d
+```
+
+### 3. Stop the Containers
+
+When you want to stop the running containers:
+
+```bash
+docker-compose down
+```
