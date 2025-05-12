@@ -31,28 +31,29 @@ Overall, the database implementation and planning were great. Some suggestions f
 
 ## Meeting 3.
 * **DATE:**
-* **ASSISTANTS:**
+* **ASSISTANTS:** Iván
 
 ### Minutes
-*Summary of what was discussed during the meeting*
+The project implementation was good overall, there wer only some parts which needed better explanation. also some bonus parts needed changes.
 
 ### Action points
-*List here the actions points discussed with assistants*
+- Explain Uniform interface better
+- In requests add some explanation of the parameters
+- Change authentication to Token authentication
 
 
 
 
 ## Meeting 4.
-* **DATE:**
-* **ASSISTANTS:**
+* **DATE:** 
+* **ASSISTANTS:** Iván
 
 ### Minutes
-*Summary of what was discussed during the meeting*
+Hypermedia part was implemented correctly, documentation needed some modifications.
 
 ### Action points
-*List here the actions points discussed with assistants*
-
-
+- Add body in the errors.
+- Remove error 500 in documentation
 
 
 ## Midterm meeting
